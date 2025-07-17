@@ -31,8 +31,8 @@ export async function findStudents({
     const params: (string | number)[] = [];
 
     if (uid) {
-        whereConditions.push("spd.codeNumber = ?");
-        params.push(uid);
+        whereConditions.push("spd.codeNumber LIKE ?");
+        params.push(`%${uid}%`);
     }
 
     if (hasRfid) {

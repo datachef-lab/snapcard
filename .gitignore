@@ -9,7 +9,6 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
 # testing
 /coverage
 
@@ -19,6 +18,9 @@
 
 # production
 /build
+
+# STUDENT_IMAGE_BASE_PATH
+/snapcard-images
 
 # misc
 .DS_Store
