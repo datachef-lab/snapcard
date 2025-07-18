@@ -556,7 +556,7 @@ export default function Page() {
                     )
                   ) : (
                     <img
-                      src="/id-card-template-backside.jpeg"
+                      src={`${process.env.NEXT_PUBLIC_BASE_PATH}/id-card-template-backside.jpeg`}
                       alt="ID Card Back"
                       className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
                     />

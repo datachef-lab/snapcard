@@ -35,7 +35,7 @@ const data = {
   },
   teams: [
     {
-      name: "BESC | SnapCard",
+      name: "BESC | ID Card Generate",
       logo: GalleryVerticalEnd,
       plan: "#v1.0.1",
     },
