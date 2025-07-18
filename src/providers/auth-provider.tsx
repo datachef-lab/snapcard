@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await axiosInstance.get<{
         accessToken: string;
         user: User;
-      }>("/api/auth/refresh", { withCredentials: true });
+      }>(`${process.env.NEXT_PUBLIC_BASE_PATH}/api/auth/refresh`, { withCredentials: true });
 
       console.log("Token refresh response:", response.data);
       setAccessToken(response.data.accessToken);
@@ -103,7 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const response = await axiosInstance.get<{
           accessToken: string;
           user: User;
-        }>("/api/auth/me", { withCredentials: true });
+        }>(`${process.env.NEXT_PUBLIC_BASE_PATH}/api/auth/me`, { withCredentials: true });
 
         console.log("Session check response:", response.data);
         setAccessToken(response.data.accessToken);
