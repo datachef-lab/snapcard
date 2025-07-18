@@ -287,7 +287,7 @@ export default function Page() {
     }
 
     // Use the clean template image
-    templateImg.src = "/id-card-template.jpeg"
+    templateImg.src = `${process.env.NEXT_PUBLIC_BASE_PATH}/id-card-template.jpeg`
   }, [capturedImage, userDetails, positions])
 
   useEffect(() => {
@@ -541,7 +541,7 @@ export default function Page() {
                   className="w-full h-[380px] flex items-center justify-center bg-gray-100 rounded-lg cursor-zoom-in"
                   onClick={() => {
                     if (!showBack && generatedCard) { setZoomImg(generatedCard); setZoomOpen(true); }
-                    if (showBack) { setZoomImg('/id-card-template-backside.jpeg'); setZoomOpen(true); }
+                  if (showBack) { setZoomImg(`${process.env.NEXT_PUBLIC_BASE_PATH}/id-card-template-backside.jpeg`); setZoomOpen(true); }
                   }}
                 >
                   {!showBack ? (

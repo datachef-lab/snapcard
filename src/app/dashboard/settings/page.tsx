@@ -27,7 +27,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState<User>(defaultUser);
 
   const fetchUsers = () => {
-    fetch('/api/users')
+    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH}/api/users`)
       .then(res => res.json())
       .then((data) => setUsers(data as User[]));
   };
@@ -52,7 +52,7 @@ export default function SettingsPage() {
   };
 
   const handleAddSubmit = async () => {
-    await fetch('/api/users', {
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH}/api/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
@@ -62,7 +62,7 @@ export default function SettingsPage() {
   };
 
   const handleEditSubmit = async () => {
-    await fetch(`/api/users?id=${editUser?.id}`, {
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH}/api/users?id=${editUser?.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),

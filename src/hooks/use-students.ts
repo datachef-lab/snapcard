@@ -15,7 +15,7 @@ async function fetchStudents({ page, pageSize, search }: { page: number; pageSiz
     size: String(pageSize),
   });
   if (search) params.append('uid', search);
-  const res = await fetch(`/api/students?${params.toString()}`);
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH}/api/students?${params.toString()}`);
   if (!res.ok) throw new Error('Failed to fetch students');
   return res.json() as Promise<StudentsResponse>;
 }

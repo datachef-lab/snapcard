@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = useCallback(async () => {
     if (isConsoleRoute) {
       try {
-        await axiosInstance.post("/api/auth/logout");
+        await axiosInstance.post(`${process.env.NEXT_PUBLIC_BASE_PATH}/api/auth/logout`);
         setAccessToken(null);
         setUser(null);
         router.push("/");
