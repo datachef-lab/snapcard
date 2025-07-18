@@ -107,7 +107,8 @@ export default function Home() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/otp", {
+      const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const response = await fetch(`${BASE_PATH}/api/auth/otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: contact }),
@@ -143,7 +144,8 @@ export default function Home() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/otp/verify", {
+      const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      const response = await fetch(`${BASE_PATH}/api/auth/otp/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: contact, code: otp }),
