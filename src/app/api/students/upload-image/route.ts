@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     const filePath = path.join(SNAPCARD_IMAGE_BASE_PATH, fileName);
 
     await fs.mkdir(SNAPCARD_IMAGE_BASE_PATH, { recursive: true });
+    // This will overwrite any existing image for the same UID
     await fs.writeFile(filePath, Buffer.from(arrayBuffer));
 
     return NextResponse.json({ success: true, fileName });

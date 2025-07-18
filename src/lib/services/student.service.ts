@@ -64,6 +64,7 @@ export async function findStudents({
             spd.bloodGroup AS bloodGroupId,
             bg.name AS bloodGroupName,
 
+            spd.phoneMobileNo,
             spd.emrgnResidentPhNo,
             spd.emrgnFatherMobno,
             spd.emrgnMotherMobNo,

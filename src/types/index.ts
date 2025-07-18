@@ -5,6 +5,7 @@ export interface Student {
     oldCodeNumber: string | null;
     rfidno: string | null;
     securityQ: number | null | string;
+    phoneMobileNo: string | null;
 
     bloodGroupId: number | null;
     bloodGroupName: string | null;

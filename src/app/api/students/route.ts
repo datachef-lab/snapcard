@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findStudents, updateRfid } from "@/lib/services";
+import { findStudents, updateRfid } from "@/lib/services/student.service";
 
 // GET /api/students
 export async function GET(req: NextRequest) {

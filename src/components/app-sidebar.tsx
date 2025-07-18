@@ -42,18 +42,18 @@ const data = {
   ],
   navMain: [
     {
-      title: "Dashboard",
+      title: "Print ID-Card",
       url: "/dashboard",
       icon: SquareTerminal,
       isActive: true,
       items: [],
     },
-    {
-      title: "Print Id-Card",
-      url: "/dashboard/print-id-card",
-      icon: Bot,
-      items: [],
-    },
+    // {
+    //   title: "Print Id-Card",
+    //   url: "/dashboard/print-id-card",
+    //   icon: Bot,
+    //   items: [],
+    // },
   ],
   projects: [
     {
@@ -75,7 +75,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
