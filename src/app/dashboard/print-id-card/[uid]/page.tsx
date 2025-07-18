@@ -4,9 +4,9 @@ import { useState, useRef, useCallback, useEffect } from "react"
 import Webcam from "react-webcam"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+// import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Camera, Download, RotateCcw, User, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react"
+import { Camera, Download, User, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react"
 import { useParams } from "next/navigation"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -50,7 +50,7 @@ export default function WebcamIDGenerator() {
         } else {
           setUserDetails(null);
         }
-      } catch (e) {
+      } catch {
         setUserDetails(null);
       }
     };
@@ -65,11 +65,11 @@ export default function WebcamIDGenerator() {
     }
   }, [webcamRef])
 
-  const retakePhoto = () => {
-    setCapturedImage(null)
-    setGeneratedCard(null)
-    setShowWebcam(true)
-  }
+  // const retakePhoto = () => {
+  //   setCapturedImage(null)
+  //   setGeneratedCard(null)
+  //   setShowWebcam(true)
+  // }
 
   const generateIDCard = useCallback(() => {
     if (!capturedImage || !canvasRef.current) return

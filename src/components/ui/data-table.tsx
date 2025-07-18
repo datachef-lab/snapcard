@@ -14,7 +14,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Skeleton } from "@/components/ui/skeleton";
+
+type ColumnMeta = { className?: string };
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -116,7 +118,7 @@ export function DataTable<TData, TValue>({
                 {table.getHeaderGroups().map(headerGroup => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map(header => (
-                      <TableHead key={header.id} className={(header.column.columnDef.meta as any)?.className}>
+                      <TableHead key={header.id} className={(header.column.columnDef.meta as ColumnMeta)?.className}>
                         {header.isPlaceholder
                           ? null
                           : flexRender(header.column.columnDef.header, header.getContext())}
@@ -134,7 +136,7 @@ export function DataTable<TData, TValue>({
                     table.getRowModel().rows.map(row => (
                       <TableRow key={row.id}>
                         {row.getVisibleCells().map(cell => (
-                          <TableCell key={cell.id} className={(cell.column.columnDef.meta as any)?.className}>
+                          <TableCell key={cell.id} className={(cell.column.columnDef.meta as ColumnMeta)?.className}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                           </TableCell>
                         ))}

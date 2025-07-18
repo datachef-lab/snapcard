@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
         "Content-Disposition": `inline; filename=${uid}.png`,
       },
     });
-  } catch (e) {
+  } catch {
     return new NextResponse("Image not found", { status: 404 });
   }
 } 

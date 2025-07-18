@@ -7,9 +7,9 @@ import { useRouter, usePathname, useParams } from "next/navigation";
 import Webcam from "react-webcam"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+// import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Camera, Download, RotateCcw, User, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react"
+import { Camera, Download, User, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react"
 // import { useParams } from "next/navigation"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -111,10 +111,10 @@ import { Student } from "@/types"
 // }
 
 
-export default function page() {
+export default function Page() {
   const [value, setValue] = useState("");
-  const router = useRouter();
-  const pathname = usePathname();
+  // const router = useRouter();
+  // const pathname = usePathname();
   const params = useParams();
 
   const webcamRef = useRef<Webcam>(null)
@@ -145,7 +145,7 @@ export default function page() {
         if (data.content && data.content.length > 0) {
           setUserDetails(data.content[0]);
         }
-      } catch (e) {
+      } catch {
         setUserDetails(null);
       }
     };
@@ -341,7 +341,7 @@ export default function page() {
     fetch(imgUrl, { method: "HEAD" }).then(res => {
       if (res.ok) setCapturedImage(imgUrl);
     });
-  }, [userDetails?.codeNumber]);
+  }, [userDetails, userDetails?.codeNumber]);
 
   useEffect(() => {
     if (saveStatus === "success") {

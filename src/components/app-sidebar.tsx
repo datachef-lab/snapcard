@@ -2,14 +2,14 @@
 
 import * as React from "react";
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
+  // AudioWaveform,
+  // BookOpen,
+  // Bot,
+  // Command,
+  // Frame,
   GalleryVerticalEnd,
-  Map,
-  PieChart,
+  // Map,
+  // PieChart,
   Settings2,
   SquareTerminal,
 } from "lucide-react";
@@ -37,7 +37,7 @@ const data = {
     {
       name: "BESC | SnapCard",
       logo: GalleryVerticalEnd,
-      plan: "#development",
+      plan: "#v1.0.1",
     },
   ],
   navMain: [

@@ -17,6 +17,7 @@ export async function findUserById(id: number): Promise<User | null> {
 
 export async function createUser(newUser: User): Promise<User | null> {
     const {createdAt, updatedAt, id, ...rest} = newUser;
+    console.log(createdAt, updatedAt, id);
     const [existingUser] = await dbPostgres
         .select()
         .from(userTable)
@@ -34,6 +35,7 @@ export async function createUser(newUser: User): Promise<User | null> {
 
 export async function updateUser(id: number, updates: Partial<User>): Promise<User | null> {
     const {createdAt, updatedAt, ...rest} = updates;
+    console.log(createdAt, updatedAt, id);
     const [updated] = await dbPostgres
         .update(userTable)
         .set(rest)

@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   try {
     const result = await findStudents({ uid, page, size, hasRfid, courseId, sessionId });
     return NextResponse.json(result);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch students" }, { status: 500 });
   }
 }
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Student not found or update failed" }, { status: 404 });
     }
     return NextResponse.json(updated);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to update RFID" }, { status: 500 });
   }
 } 

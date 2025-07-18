@@ -14,9 +14,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "file and uid are required" }, { status: 400 });
     }
 
-    // @ts-ignore
+    // @ts-expect-error file type mismatch
     const arrayBuffer = await file.arrayBuffer();
-    // @ts-ignore
+    // @ts-expect-error name may be undefined
     const originalName = file.name || "image";
     const ext = path.extname(originalName) || ".jpg";
     const fileName = `${uid}${ext}`;
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     await fs.writeFile(filePath, Buffer.from(arrayBuffer));
 
     return NextResponse.json({ success: true, fileName });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to upload image" }, { status: 500 });
   }
 } 
