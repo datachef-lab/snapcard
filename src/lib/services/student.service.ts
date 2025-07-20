@@ -80,7 +80,9 @@ export async function findStudents({
             sh.shiftName,
 
             spm.sessionId,
-            cs.sessionName
+            cs.sessionName,
+
+            ay.accademicYearName AS academicYear
 
         FROM studentpersonaldetails spd
 
@@ -96,6 +98,8 @@ export async function findStudents({
 
         JOIN studentpaperlinkingpaperlist splp ON splp.id = spls.parent_id
         JOIN studentpaperlinkingmain spm ON spm.id = splp.parent_id
+
+        JOIN accademicyear ay ON ay.sessionId = spm.sessionId 
 
         JOIN course c ON c.id = spm.courseId
         JOIN shift sh ON sh.id = spm.shiftId

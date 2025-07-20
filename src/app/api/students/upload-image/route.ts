@@ -8,10 +8,10 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file");
-    const uid = formData.get("uid");
+    const idCardIssueId = formData.get("id_card_issue_id");
 
-    if (!file || typeof uid !== "string") {
-      return NextResponse.json({ error: "file and uid are required" }, { status: 400 });
+    if (!file || typeof idCardIssueId !== "string") {
+      return NextResponse.json({ error: "file and id_card_issue_id are required" }, { status: 400 });
     }
 
     // @ts-expect-error file type mismatch
@@ -19,11 +19,11 @@ export async function POST(req: NextRequest) {
     // @ts-expect-error name may be undefined
     const originalName = file.name || "image";
     const ext = path.extname(originalName) || ".jpg";
-    const fileName = `${uid}${ext}`;
+    const fileName = `${idCardIssueId}${ext}`;
     const filePath = path.join(SNAPCARD_IMAGE_BASE_PATH, fileName);
 
     await fs.mkdir(SNAPCARD_IMAGE_BASE_PATH, { recursive: true });
-    // This will overwrite any existing image for the same UID
+    // This will overwrite any existing image for the same id_card_issue_id
     await fs.writeFile(filePath, Buffer.from(arrayBuffer));
 
     return NextResponse.json({ success: true, fileName });

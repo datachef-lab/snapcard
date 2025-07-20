@@ -26,4 +26,16 @@ export interface Student {
 
     sessionId: number;
     sessionName: string | null;
+
+    academicYear: string;
+}
+
+export interface IdCardIssue {
+    readonly id?: number;
+    student_id_fk: number;
+    issue_date: Date | string;
+    expiry_date: Date | string;
+    issue_status: 'ISSUED' | 'RENEWED' | 'REISSUED';
+    renewed_from_id: number | null;
+    remarks: string | null;
 }

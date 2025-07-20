@@ -6,19 +6,19 @@ const SNAPCARD_IMAGE_BASE_PATH = process.env.SNAPCARD_IMAGE_BASE_PATH || "./publ
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const uid = searchParams.get("uid");
-  if (!uid) {
-    return new NextResponse("Missing uid", { status: 400 });
+  const idCardIssueId = searchParams.get("id_card_issue_id");
+  if (!idCardIssueId) {
+    return new NextResponse("Missing id_card_issue_id", { status: 400 });
   }
-  const imagePath = path.join(SNAPCARD_IMAGE_BASE_PATH, `${uid}.png`);
+  const imagePath = path.join(SNAPCARD_IMAGE_BASE_PATH, `${idCardIssueId}.png`);
   try {
-    console.log("fired the fetch image api for:", uid);
+    console.log("fired the fetch image api for:", idCardIssueId);
     const imageBuffer = await fs.readFile(imagePath);
     return new NextResponse(imageBuffer, {
       status: 200,
       headers: {
         "Content-Type": "image/png",
-        "Content-Disposition": `inline; filename=${uid}.png`,
+        "Content-Disposition": `inline; filename=${idCardIssueId}.png`,
       },
     });
   } catch {
