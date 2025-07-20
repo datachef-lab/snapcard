@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter, usePathname, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 
 import Webcam from "react-webcam"
 import { Button } from "@/components/ui/button"
@@ -12,12 +12,9 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { IdCardIssue, Student } from "@/types"
 import QRCode from "qrcode"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
-import { error } from "console";
 
 
 export default function Page() {
@@ -30,7 +27,6 @@ export default function Page() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [idCardIssues, setIdCardIssues] = useState<IdCardIssue[]>([]);
-  const [idCardIssueRecent, setIdCardIssueRecent] = useState<IdCardIssue | null>(null);
   const [generatedCard, setGeneratedCard] = useState<string | null>(null)
   const [showWebcam, setShowWebcam] = useState(false)
   const [userDetails, setUserDetails] = useState<Student | null>(null);
@@ -106,12 +102,6 @@ export default function Page() {
       setShowWebcam(false)
     }
   }, [webcamRef])
-
-  const retakePhoto = () => {
-    setCapturedImage(null)
-    setGeneratedCard(null)
-    setShowWebcam(true)
-  }
 
   const generateIDCard = useCallback(async () => {
     if (!capturedImage || !canvasRef.current) return
@@ -390,23 +380,7 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params?.uid]);
 
-  // Dummy data for idCardIssues
-  const dummyIssues: { type: string; remarks: string; date: string }[] = [
-    { type: "ISSUED", remarks: "First card issued", date: "2023-06-01" },
-    { type: "RENEWED", remarks: "Renewed the card.", date: "2024-06-01" },
-    { type: "REISSUED", remarks: "Reissued due to lost card", date: "2025-01-15" },
-  ];
-
   // Helper to format date as dd-mm-yyyy
-  function formatDateToDDMMYYYY(dateStr: string) {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
-  }
   function formatDateToYYYYMMDD(dateStr: string) {
     // Accepts dd-mm-yyyy or yyyy-mm-dd, returns yyyy-mm-dd for input value
     if (!dateStr) return "";

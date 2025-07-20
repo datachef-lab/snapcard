@@ -22,7 +22,7 @@ export async function createIdCardIssue(givenIdCardIssue: IdCardIssue) {
     ];
     console.log('SQL:', sql);
     console.log('Values:', values);
-    const result: any = await query(sql, values);
+    const result = await query(sql, values) as unknown as { insertId: number };
     console.log('Insert result:', result);
     const newIssue = await getIdCardIssueById(result.insertId);
     console.log('Fetched new issue:', newIssue);

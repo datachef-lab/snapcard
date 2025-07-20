@@ -7,8 +7,7 @@ export async function POST(req: NextRequest) {
     const newIssue = await createIdCardIssue(body);
     return NextResponse.json({ success: true, data: newIssue });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error?.message || error }, { status: 500 });
-  }
+    return NextResponse.json({ success: false, error: (error as Error)?.message || String(error) }, { status: 500 });}
 }
 
 export async function GET(req: NextRequest) {
@@ -27,6 +26,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: issues });
     }
   } catch (error) {
-    return NextResponse.json({ success: false, error: error?.message || error }, { status: 500 });
+    return NextResponse.json({ success: false, error: (error as Error)?.message || String(error) }, { status: 500 });
   }
 } 
