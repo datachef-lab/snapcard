@@ -1,0 +1,269 @@
+{
+  "id": "21cd5f41-3977-4971-869e-fbe8eb68cb8d",
+  "prevId": "706d83eb-ebef-4c7d-9b7f-fda2190760fc",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.id_card_templates": {
+      "name": "id_card_templates",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "admission_year": {
+          "name": "admission_year",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name_coordinates": {
+          "name": "name_coordinates",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "course_coordinates": {
+          "name": "course_coordinates",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "uid_coordinates": {
+          "name": "uid_coordinates",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mobile_coordinates": {
+          "name": "mobile_coordinates",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "bloodGroup_coordinates": {
+          "name": "bloodGroup_coordinates",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sports_quota_coordinates": {
+          "name": "sports_quota_coordinates",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "qrcode_coordinates": {
+          "name": "qrcode_coordinates",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "qrcode_size": {
+          "name": "qrcode_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_till_date_coordinates": {
+          "name": "valid_till_date_coordinates",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo_dimensions": {
+          "name": "photo_dimensions",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "disabled": {
+          "name": "disabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.otps": {
+      "name": "otps",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id_fk": {
+          "name": "user_id_fk",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expiresAt": {
+          "name": "expiresAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "otps_user_id_fk_users_id_fk": {
+          "name": "otps_user_id_fk_users_id_fk",
+          "tableFrom": "otps",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id_fk"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "profileImage": {
+          "name": "profileImage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isActive": {
+          "name": "isActive",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "isAdmin": {
+          "name": "isAdmin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_email_unique": {
+          "name": "users_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

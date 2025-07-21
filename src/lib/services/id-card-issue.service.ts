@@ -10,15 +10,29 @@ export async function createIdCardIssue(givenIdCardIssue: IdCardIssue) {
         expiry_date,
         issue_status,
         renewed_from_id,
-        remarks
-    ) VALUES (?, ?, ?, ?, ?, ?)`;
+        remarks,
+        name,
+        sports_quota,
+        phone_mobile_no,
+        blood_group_name,
+        course_name,
+        created_at,
+        updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const values = [
         givenIdCardIssue.student_id_fk,
         givenIdCardIssue.issue_date,
         givenIdCardIssue.expiry_date,
         givenIdCardIssue.issue_status,
         givenIdCardIssue.renewed_from_id,
-        givenIdCardIssue.remarks
+        givenIdCardIssue.remarks,
+        givenIdCardIssue.name,
+        givenIdCardIssue.sports_quota,
+        givenIdCardIssue.phone_mobile_no,
+        givenIdCardIssue.blood_group_name,
+        givenIdCardIssue.course_name,
+        givenIdCardIssue.created_at,
+        givenIdCardIssue.updated_at,
     ];
     console.log('SQL:', sql);
     console.log('Values:', values);

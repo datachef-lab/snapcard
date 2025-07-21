@@ -92,6 +92,28 @@ export default function Page() {
         if (data.content && data.content.length > 0) {
           setUserDetails(data.content[0]);
           setNotFound(false);
+          // Fetch template for this student's admission year
+          const admissionYear = data.content[0].academicYear;
+          if (admissionYear) {
+            const templateRes = await fetch(`/api/id-card-template?admissionYear=${admissionYear}`);
+            if (templateRes.ok) {
+              const template = await templateRes.json();
+              if (template) {
+                setPositions({
+                  name: template.nameCoordinates,
+                  course: template.courseCoordinates,
+                  uid: template.uidCoordinates,
+                  mobile: template.mobileCoordinates,
+                  bloodGroup: template.bloodGroupCoordinates,
+                  sequrityQ: template.sportsQuotaCoordinates, // or template.securityQCoordinates if exists
+                  qrcode: template.qrcodeCoordinates,
+                  validTillDate: template.validTillDateCoordinates || { x: 0, y: 0 },
+                });
+                setQrcodeSize(template.qrcodeSize);
+                setPhotoRect(template.photoDimension);
+              }
+            }
+          }
         } else {
           setUserDetails(null);
           setNotFound(true);
@@ -316,6 +338,14 @@ export default function Page() {
           issue_status: issueType,
           renewed_from_id: renewedFromId,
           remarks,
+          name: userDetails?.name || '',
+          blood_group_name: userDetails?.bloodGroupName || '',
+          course_name: userDetails?.courseName || '',
+          phone_mobile_no: userDetails?.phoneMobileNo || '',
+          security_q: userDetails?.securityQ || '',
+          sports_quota: userDetails?.securityQ || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         } as IdCardIssue),
       });
       let newIssueId: number | null = null;

@@ -43,8 +43,8 @@ export interface IdCardIssue {
     updated_at: Date | string;
 
     name: string;
-    sportsQuota: null | string;
-    phoneMobileNo: string;
-    bloodGroupName: string;
-    courseName: string;
+    sports_quota: null | string;
+    phone_mobile_no: string;
+    blood_group_name: string;
+    course_name: string;
 }

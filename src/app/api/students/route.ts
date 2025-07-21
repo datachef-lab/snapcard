@@ -14,7 +14,8 @@ export async function GET(req: NextRequest) {
   try {
     const result = await findStudents({ uid, page, size, hasRfid, courseId, sessionId });
     return NextResponse.json(result);
-  } catch {
+  } catch (error) {
+    console.log(error)
     return NextResponse.json({ error: "Failed to fetch students" }, { status: 500 });
   }
 }

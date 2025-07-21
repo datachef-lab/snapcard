@@ -114,6 +114,9 @@ export async function findStudents({
         OFFSET ?;
     `;
 
+    console.log(sql)
+    
+
     const countSql = `
         SELECT COUNT(*) AS total
         FROM studentpersonaldetails spd
@@ -139,7 +142,8 @@ export async function findStudents({
 
         ${whereClause};
     `;
-
+    console.log(countSql);
+    
     const finalParams = [...params, size, offset];
 
     const results = await query<RowDataPacket[]>(sql, finalParams);
@@ -175,3 +179,7 @@ export async function updateRfid(uid: string, newRfid: string): Promise<Student 
         return null;
     }
 }
+
+// export async function getStudentCount(params:type) {
+    
+// }

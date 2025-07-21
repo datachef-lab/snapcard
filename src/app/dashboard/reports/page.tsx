@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Download as DownloadIcon } from 'lucide-react';
 import { User, IdCard, Clock, BadgeCheck } from 'lucide-react';
+import { pusherClient } from '@/lib/pusher-client';
+import Pusher from 'pusher-js';
+import { useAuth } from '@/hooks/use-auth';
 
 interface Stats {
   totalStudents: number;
@@ -117,19 +120,83 @@ function getInitials(name: string) {
 }
 
 export default function ReportsPage() {
+  const { user } = useAuth();
   const [admissionYear, setAdmissionYear] = useState(ADMISSION_YEARS[0]);
   const [date, setDate] = useState(DATES_BY_YEAR[ADMISSION_YEARS[0]][0]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [hourlyStats, setHourlyStats] = useState<HourlyStat[]>([]);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
-  // Mock current user type
-  const currentUserType: 'Admin' | 'Member' = 'Admin';
 
+  // Use authenticated user info
+  const currentUser = user
+    ? { name: user.name, email: user.email, type: user.isAdmin ? 'Admin' : 'Member' }
+    : { name: 'Unknown', email: 'unknown@example.com', type: 'Member' };
+
+  // Pusher presence channel for active users
   useEffect(() => {
-    setStats(getMockStats(admissionYear, date));
-    setHourlyStats(getMockHourlyStats(date));
-    setActiveUsers(getMockActiveUsers());
+    if (!currentUser.email || !currentUser.name) return;
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+      authEndpoint: '/api/pusher/auth',
+      auth: {
+        params: {
+          user_id: currentUser.email,
+          user_info: JSON.stringify(currentUser)
+        }
+      }
+    });
+    const channel = pusher.subscribe('presence-reports');
+    channel.bind('pusher:subscription_succeeded', (members: any) => {
+      console.log('[Pusher] subscription_succeeded', members);
+      setActiveUsers(Object.values(members.members));
+    });
+    channel.bind('pusher:member_added', (member: any) => {
+      console.log('[Pusher] member_added', member);
+      setActiveUsers(prev => [...prev, member.info]);
+    });
+    channel.bind('pusher:member_removed', (member: any) => {
+      console.log('[Pusher] member_removed', member);
+      setActiveUsers(prev => prev.filter(u => u.email !== member.id));
+    });
+    channel.bind('pusher:subscription_error', (err: any) => {
+      console.error('[Pusher] subscription_error', err);
+    });
+    pusher.connection.bind('error', (err: any) => {
+      console.error('[Pusher] connection error', err);
+    });
+    return () => {
+      channel.unbind_all();
+      channel.unsubscribe();
+      pusher.disconnect();
+    };
+  }, [currentUser.email, currentUser.name, currentUser.type]);
+
+  // Fetch stats and hourly on mount and when year/date changes
+  useEffect(() => {
+    async function fetchStats() {
+      const res = await fetch(`/api/reports/stats?year=${admissionYear}&date=${date}`);
+      const data = await res.json();
+      if (data.success) {
+        setStats(data.stats);
+        setHourlyStats(data.hourly);
+      }
+    }
+    fetchStats();
   }, [admissionYear, date]);
+
+  // Subscribe to Pusher for real-time stats updates
+  useEffect(() => {
+    const channel = pusherClient.subscribe('reports');
+    const handleStatsUpdate = (data: { stats: Stats; hourly: HourlyStat[] }) => {
+      setStats(data.stats);
+      setHourlyStats(data.hourly);
+    };
+    channel.bind('stats-update', handleStatsUpdate);
+    return () => {
+      channel.unbind('stats-update', handleStatsUpdate);
+      pusherClient.unsubscribe('reports');
+    };
+  }, []);
 
   useEffect(() => {
     setDate(DATES_BY_YEAR[admissionYear][0]);
@@ -164,6 +231,11 @@ export default function ReportsPage() {
   // Table and users max heights (adjust as needed for your layout)
   const tableMaxHeight = '260px';
   const usersMaxHeight = '260px';
+
+  // Filter out the current user from the active users list
+  const filteredActiveUsers = activeUsers.filter(
+    (u) => u.email !== currentUser.email
+  );
 
   return (
     <div className="flex flex-col min-h-screen h-screen overflow-hidden p-2">
@@ -322,7 +394,7 @@ export default function ReportsPage() {
               </CardHeader>
               <CardContent className="flex-1 overflow-auto">
                 <ul className="divide-y divide-gray-200">
-                  {activeUsers.map((user) => (
+                  {filteredActiveUsers.map((user) => (
                     <li key={user.email} className="py-3 flex items-center gap-3">
                       <Avatar className="h-10 w-10">
                         <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
