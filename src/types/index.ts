@@ -38,4 +38,13 @@ export interface IdCardIssue {
     issue_status: 'ISSUED' | 'RENEWED' | 'REISSUED';
     renewed_from_id: number | null;
     remarks: string | null;
+
+    created_at: Date | string;
+    updated_at: Date | string;
+
+    name: string;
+    sportsQuota: null | string;
+    phoneMobileNo: string;
+    bloodGroupName: string;
+    courseName: string;
 }

@@ -55,6 +55,8 @@ export default function Page() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteIssueId, setDeleteIssueId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   // Update remarks when issueType changes
   useEffect(() => {
@@ -76,20 +78,31 @@ export default function Page() {
 
   useEffect(() => {
     const fetchStudent = async () => {
-      if (!value) return;
+      if (!value) {
+        setUserDetails(null);
+        setNotFound(false);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setNotFound(false);
       try {
         const res = await fetch(`${BASE_PATH}/api/students?uid=${value}`);
         const data = await res.json();
         if (data.content && data.content.length > 0) {
           setUserDetails(data.content[0]);
+          setNotFound(false);
         } else {
           setUserDetails(null);
+          setNotFound(true);
         }
       } catch {
         setUserDetails(null);
+        setNotFound(true);
       } finally {
         setCapturedImage(null)
         setGeneratedCard(null)
+        setLoading(false);
       }
     };
     fetchStudent();
@@ -410,7 +423,17 @@ export default function Page() {
       />
       <div className="mt-8">
         {/* {JSON.stringify(userDetails)} */}
-        {userDetails && <div className="">
+        {loading && (
+          <div className="flex justify-center items-center h-32">
+            <span>Loading...</span>
+          </div>
+        )}
+        {notFound && !loading && (
+          <div className="flex justify-center items-center h-32 text-red-500">
+            Student not found.
+          </div>
+        )}
+        {userDetails && !loading && !notFound && <div className="">
           <div className="">
             <div className="flex gap-4">
               {/* Left: Editable Form */}
@@ -748,11 +771,11 @@ export default function Page() {
                               id="issued"
                               checked={issueType === "ISSUED"}
                               onCheckedChange={() => setIssueType("ISSUED")}
-                              disabled={idCardIssues.length > 0}
+                              // Always enabled
                             />
                             <label htmlFor="issued" className="text-sm font-medium">ISSUED</label>
                           </div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2" title={idCardIssues.length === 0 ? "You must issue the first card before you can renew." : ""}>
                             <Checkbox
                               id="renewed"
                               checked={issueType === "RENEWED"}
@@ -761,7 +784,7 @@ export default function Page() {
                             />
                             <label htmlFor="renewed" className="text-sm font-medium">RENEWED</label>
                           </div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-2" title={idCardIssues.length === 0 ? "You must issue the first card before you can reissue." : ""}>
                             <Checkbox
                               id="reissued"
                               checked={issueType === "REISSUED"}
@@ -771,6 +794,9 @@ export default function Page() {
                             <label htmlFor="reissued" className="text-sm font-medium">REISSUED</label>
                           </div>
                         </div>
+                        {idCardIssues.length === 0 && (
+                          <div className="text-xs text-gray-500 mt-1">You must issue the first card before you can renew or reissue.</div>
+                        )}
                       </div>
                       <div>
                         <label className="block font-semibold mb-1">Remarks</label>
