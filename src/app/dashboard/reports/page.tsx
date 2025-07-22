@@ -14,6 +14,7 @@ import { pusherClient } from '@/lib/pusher-client';
 import Pusher from 'pusher-js';
 import { useAuth } from '@/hooks/use-auth';
 import { downloadIdCardDetails, fetchAdmissionYears, fetchDatesByAdmissionYear } from './action';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Stats {
   totalStudents: number;
@@ -142,6 +143,8 @@ export default function ReportsPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [hourlyStats, setHourlyStats] = useState<HourlyStat[]>([]);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
+  const [remountKey, setRemountKey] = useState(0);
+  const [downloadingHour, setDownloadingHour] = useState<string | null>(null);
 
   useEffect(() => {
     fetchAdmissionYears()
@@ -172,11 +175,18 @@ export default function ReportsPage() {
     const channel = pusher.subscribe('presence-reports');
     channel.bind('pusher:subscription_succeeded', (members: any) => {
       console.log('[Pusher] subscription_succeeded', members);
-      setActiveUsers(Object.values(members.members));
+      setActiveUsers(Object.values(members.members) as User[]);
     });
     channel.bind('pusher:member_added', (member: any) => {
       console.log('[Pusher] member_added', member);
-      setActiveUsers(prev => [...prev, member.info]);
+      setActiveUsers(prev => {
+        const newUser = member.info as User;
+        // Avoid adding duplicates
+        if (prev.some(u => u.email === newUser.email)) {
+          return prev;
+        }
+        return [...prev, newUser];
+      });
     });
     channel.bind('pusher:member_removed', (member: any) => {
       console.log('[Pusher] member_removed', member);
@@ -219,24 +229,58 @@ useEffect(() => {
       format(new Date(ele.date), "dd-MM-yyyy")
     );
     setDates(formattedDates);
-    setDate(formattedDates[formattedDates.length - 1]);
+    // Only set the most recent date if none is selected or the current date is not in the list
+    if (!date || !formattedDates.includes(date)) {
+      setDate(formattedDates[formattedDates.length - 1]);
+    }
   });
 }, [admissionYear]);
 
 
   // Subscribe to Pusher for real-time stats updates
   useEffect(() => {
+    // Function to fetch stats and hourly stats from your API
+    async function fetchStatsAndHourly() {
+      if (!admissionYear || !date) return;
+      const res = await fetch(`${BASE_URL}/api/reports/stats?year=${admissionYear}&date=${date}&t=${Date.now()}`); // cache-busting param
+      const data = await res.json();
+      console.log('[ReportsPage] Fetched stats:', data);
+      if (data.success) {
+        setStats(data.stats);
+        setHourlyStats(data.hourly);
+      }
+    }
+    async function fetchDates() {
+      if (!admissionYear) return;
+      const data = await fetchDatesByAdmissionYear(admissionYear);
+      const dateStrings = data.map(d => {
+        if (typeof d.date === 'string') return d.date;
+        if (Object.prototype.toString.call(d.date) === '[object Date]') return (d.date as Date).toISOString().slice(0, 10);
+        return String(d.date);
+      });
+      if (Array.isArray(dateStrings) && dateStrings.length > 0) {
+        setDates(dateStrings);
+        // Only set the most recent date if none is selected or the current date is not in the list
+        if (!date || !dateStrings.includes(date)) {
+          setDate(dateStrings[dateStrings.length - 1]);
+        }
+      }
+    }
+    fetchStatsAndHourly();
+    fetchDates();
     const channel = pusherClient.subscribe('reports');
-    const handleStatsUpdate = (data: { stats: Stats; hourly: HourlyStat[] }) => {
-      setStats(data.stats);
-      setHourlyStats(data.hourly);
+    const handleStatsUpdate = () => {
+      console.log('[ReportsPage] Received stats-update event');
+      fetchStatsAndHourly();
+      fetchDates();
+      setRemountKey(prev => prev + 1); // force remount
     };
     channel.bind('stats-update', handleStatsUpdate);
     return () => {
       channel.unbind('stats-update', handleStatsUpdate);
       pusherClient.unsubscribe('reports');
     };
-  }, []);
+  }, [admissionYear, date]);
 
   useEffect(() => {
     // setDate(DATES_BY_YEAR[admissionYear][0]);
@@ -280,7 +324,7 @@ useEffect(() => {
   );
 
   return (
-    <div className="flex flex-col min-h-screen h-screen overflow-hidden p-2">
+    <div key={remountKey} className="flex flex-col min-h-screen h-screen overflow-hidden p-2">
       {/* Heading and Filters Row */}
       <div className="flex items-center justify-between px-6 pt-6 pb-2 overflow-hidden border-b border-gray-200 mb-2 bg-white" style={{flex: '0 0 auto'}}>
         <h1 className="text-3xl font-bold tracking-tight">Reports Dashboard</h1>
@@ -385,39 +429,44 @@ useEffect(() => {
                       </tr>
                     </thead>
                     <tbody>
-                      {hourlyStats.map(({ from, to }, idx) => (
-                        <tr
-                          key={from}
-                          className={`transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50`}
-                          style={{ height: '36px' }}
-                        >
-                          <td className="text-center font-mono py-1 px-2 text-sm whitespace-nowrap border-b border-gray-100">
-                            {formatHourRange(Number(from.substring(0, 2)), Number(to.substring(0, 2)))}
-                          </td>
-                          <td className="text-center py-1 px-2 text-sm border-b border-gray-100">
-                            {hourlyStats[idx]?.count ?? 0}
-                          </td>
-                          <td className="text-center py-1 px-2 text-sm border-b border-gray-100">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="text-blue-600 hover:bg-blue-100 h-7 w-7"
-                              onClick={async () => {
-                                const res = await fetch(`/api/reports/id-card-download?date=${date}&hour=${from.substring(0, 2)}`);
-                                const blob = await res.blob();
-                                const file = new Blob([blob], {
-                                  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                                });
-                                saveAs(file, `id-cards-${date}-${from.substring(0, 2)}.xlsx`);
-                              }}
-                              // disabled={!hourlyStats[idx]?.hour}
-                              aria-label="Download"
-                            >
-                              <DownloadIcon className="w-4 h-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
+                      {hourlyStats.map(({ from, to }, idx) => {
+                        if (!from || !to) return null; // skip this row if data is missing
+                        return (
+                          <tr
+                            key={from}
+                            className={`transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50`}
+                            style={{ height: '36px' }}
+                          >
+                            <td className="text-center font-mono py-1 px-2 text-sm whitespace-nowrap border-b border-gray-100">
+                              {formatHourRange(Number(from.substring(0, 2)), Number(to.substring(0, 2)))}
+                            </td>
+                            <td className="text-center py-1 px-2 text-sm border-b border-gray-100">
+                              {hourlyStats[idx]?.count ?? 0}
+                            </td>
+                            <td className="text-center py-1 px-2 text-sm border-b border-gray-100">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="text-blue-600 hover:bg-blue-100 h-7 w-7"
+                                disabled={downloadingHour === from}
+                                onClick={async () => {
+                                  setDownloadingHour(from);
+                                  try {
+                                    const res = await fetch(`/api/reports/id-card-download?date=${date}&hour=${from.substring(0, 2)}`);
+                                    const blob = await res.blob();
+                                    saveAs(blob, `id-cards-${date}-${from.substring(0, 2)}.xlsx`);
+                                  } finally {
+                                    setDownloadingHour(null);
+                                  }
+                                }}
+                                aria-label="Download"
+                              >
+                                {downloadingHour === from ? <Spinner className="w-4 h-4 animate-spin" /> : <DownloadIcon className="w-4 h-4" />}
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

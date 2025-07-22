@@ -44,11 +44,16 @@ export async function createIdCardIssue(givenIdCardIssue: IdCardIssue) {
 }
 
 export async function getIdCardIssueById(id: number) {
-    const [result] = await query<RowDataPacket[]>(
-        `SELECT * FROM id_card_issues WHERE id = ? ORDER BY issue_date DESC`,
-        [id]
-    ) as IdCardIssue[];
-    return result;
+  const [result] = await query<RowDataPacket[]>(
+    `SELECT i.*, ay.accademicYearName AS admissionYear
+     FROM id_card_issues i
+     JOIN studentpersonaldetails spd ON spd.id = i.student_id_fk
+     JOIN accademicyear ay ON spd.academicyearid = ay.id
+     WHERE i.id = ?
+     ORDER BY i.issue_date DESC`,
+    [id]
+  ) as IdCardIssue[];
+  return result;
 }
 
 export async function updateIdCardIssue(id: number, update: Partial<IdCardIssue>) {

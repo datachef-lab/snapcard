@@ -48,7 +48,7 @@ export async function fetchIdCardStatsPerHour(date: string) {
 
   // Only include results with count > 0
   return dbResults
-    .filter((row) => row.count > 0)
+    .filter((row) => row.count > 0 && row.hour !== null)
     .map((row) => {
       const from = `${row.hour.toString().padStart(2, '0')}:00`;
       const to = `${((row.hour + 1) % 24).toString().padStart(2, '0')}:00`;
@@ -70,11 +70,15 @@ import ExcelJS from 'exceljs';
  */
 import { format as formatDate, parseISO } from 'date-fns';
 
-export async function downloadIdCardDetails(date: string, hour: number): Promise<Buffer> {
+export async function downloadIdCardDetails(date: string, hour: number): Promise<ArrayBuffer | Uint8Array> {
   console.log('fired download');
-  
-  const formattedDate = formatDate(new Date(date.split('-').reverse().join('-')), 'yyyy-MM-dd');
-  console.log(formattedDate);
+  // Robust date parsing
+  let formattedDate = date;
+  if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
+    const [dd, mm, yyyy] = date.split('-');
+    formattedDate = `${yyyy}-${mm}-${dd}`;
+  }
+  console.log('Formatted issue_date:', formattedDate);
 
   const results = await query<RowDataPacket[]>(`
     SELECT 
@@ -98,14 +102,12 @@ export async function downloadIdCardDetails(date: string, hour: number): Promise
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('ID Card Details');
 
-  // Add header
+  // ✅ Corrected header
   sheet.addRow([
     'ID', 'Name', 'Phone', 'Blood Group', 'Course',
     'Expiry Date', 'Status', 'Remarks', 'Created At'
   ]);
-  
 
-  // Add rows with formatted dates
   results.forEach(row => {
     sheet.addRow([
       row.id,
@@ -122,3 +124,4 @@ export async function downloadIdCardDetails(date: string, hour: number): Promise
 
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
+
