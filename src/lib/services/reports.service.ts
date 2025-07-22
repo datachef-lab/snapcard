@@ -34,7 +34,7 @@ const yearNumber = parsedDate.getFullYear();
     const [{ todayIdCards }] = await query<RowDataPacket[]>(
         `SELECT COUNT(*) AS todayIdCards
          FROM id_card_issues
-         WHERE issue_status = 'ISSUED' AND DATE(created_at) = ?`,
+         WHERE issue_status = 'ISSUED' AND DATE(CONVERT_TZ(created_at, '+00:00', '+05:30')) = ?`,
         [date]
     ) as [{ todayIdCards: number }];
 

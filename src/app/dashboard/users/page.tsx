@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { Plus } from 'lucide-react'
+import { useAuth } from '@/hooks/use-auth';
 
 const defaultUser: User = {
   id: 0,
@@ -20,6 +21,7 @@ const defaultUser: User = {
 };
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -85,7 +87,7 @@ export default function SettingsPage() {
     },
   ];
 
-  return (
+  return (user?.isAdmin ? (
     <div className="mt-10 px-4">
       <Card className="p-6">
         <div className="flex justify-between items-center border-b pb-3 mb-6">
@@ -145,5 +147,9 @@ export default function SettingsPage() {
         </Dialog>
       </Card>
     </div>
-  );
+  ) : (
+    <div>
+      <h1>You are not authorized to access this page</h1>
+    </div>
+  ));
 }

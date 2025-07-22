@@ -323,7 +323,7 @@ useEffect(() => {
     (u) => u.email !== currentUser.email
   );
 
-  return (
+  return (user?.isAdmin ? (
     <div key={remountKey} className="flex flex-col min-h-screen h-screen overflow-hidden p-2">
       {/* Heading and Filters Row */}
       <div className="flex items-center justify-between px-6 pt-6 pb-2 overflow-hidden border-b border-gray-200 mb-2 bg-white" style={{flex: '0 0 auto'}}>
@@ -384,140 +384,91 @@ useEffect(() => {
               <span className="text-2xl font-bold text-gray-800">{stats?.remaining ?? '-'}</span>
             </div>
           </Card>
-          <Card className="bg-white p-4 flex flex-row items-center gap-3 shadow-sm border rounded-lg">
-            <div className="bg-purple-100 rounded-full p-2 flex items-center justify-center">
-              <BadgeCheck className="w-6 h-6 text-purple-600" />
+        
+        </div>
+        {/* Table Section - now full width */}
+        <div className="flex-1 flex flex-col min-w-0 h-full">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-lg">ID Cards Per Hour</h3>
+            <div className='flex gap-2'>
+
+            {/* <Button onClick={handleDownloadAllZip} className="bg-blue-600 text-white hover:bg-blue-700">
+              Download All 
+            </Button> */}
+            <Button onClick={handleDownloadAllZip} className="bg-blue-600 text-white hover:bg-blue-700">
+              Download Id-Cards (ZIP)
+            </Button>
             </div>
-            <div className="flex flex-col justify-center">
-              <span className="text-xs text-gray-500">ID Cards Done Today</span>
-              <span className="text-2xl font-bold text-gray-800">{stats?.todayIdCards ?? '-'}</span>
-            </div>
+          </div>
+          <Card className="p-0 flex-1 flex flex-col min-h-0 shadow rounded-lg border h-full">
+            <CardContent className="p-0 flex-1 flex flex-col min-h-0 h-full">
+              <div
+                className="overflow-auto flex-1 min-h-0"
+                style={{
+                  borderRadius: '0.5rem',
+                  border: '1px solid #e5e7eb',
+                  background: '#fafbfc',
+                }}
+              >
+                <table className="w-full text-sm border-separate" style={{ borderSpacing: 0 }}>
+                  <thead className="sticky top-0 z-10 bg-gray-100 border-b border-gray-200">
+                    <tr>
+                      <th className="text-center py-2 px-2 text-xs font-semibold border-b border-gray-200">Hour</th>
+                      <th className="text-center py-2 px-2 text-xs font-semibold border-b border-gray-200">Count</th>
+                      <th className="text-center py-2 px-2 text-xs font-semibold border-b border-gray-200">Download</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hourlyStats.map(({ from, to }, idx) => {
+                      if (!from || !to) return null; // skip this row if data is missing
+                      return (
+                        <tr
+                          key={from}
+                          className={`transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50`}
+                          style={{ height: '36px' }}
+                        >
+                          <td className="text-center font-mono py-1 px-2 text-sm whitespace-nowrap border-b border-gray-100">
+                            {formatHourRange(Number(from.substring(0, 2)), Number(to.substring(0, 2)))}
+                          </td>
+                          <td className="text-center py-1 px-2 text-sm border-b border-gray-100">
+                            {hourlyStats[idx]?.count ?? 0}
+                          </td>
+                          <td className="text-center py-1 px-2 text-sm border-b border-gray-100">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-blue-600 hover:bg-blue-100 h-7 w-7"
+                              disabled={downloadingHour === from}
+                              onClick={async () => {
+                                setDownloadingHour(from);
+                                try {
+                                  const res = await fetch(`/api/reports/id-card-download?date=${date}&hour=${from.substring(0, 2)}`);
+                                  const blob = await res.blob();
+                                  saveAs(blob, `id-cards-${date}-${from.substring(0, 2)}.xlsx`);
+                                } finally {
+                                  setDownloadingHour(null);
+                                }
+                              }}
+                              aria-label="Download"
+                            >
+                              {downloadingHour === from ? <Spinner className="w-4 h-4 animate-spin" /> : <DownloadIcon className="w-4 h-4" />}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
           </Card>
         </div>
-        {/* Table and Active Users Side by Side */}
-        <div className="flex flex-1 flex-col md:flex-row gap-8 px-6 overflow-hidden ">
-          {/* Table Section */}
-          <div className="flex-1 flex flex-col min-w-0 h-full">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-lg">ID Cards Per Hour</h3>
-              <div className='flex gap-2'>
-
-              {/* <Button onClick={handleDownloadAllZip} className="bg-blue-600 text-white hover:bg-blue-700">
-                Download All 
-              </Button> */}
-              <Button onClick={handleDownloadAllZip} className="bg-blue-600 text-white hover:bg-blue-700">
-                Download Id-Cards (ZIP)
-              </Button>
-              </div>
-            </div>
-            <Card className="p-0 flex-1 flex flex-col min-h-0 shadow rounded-lg border h-full">
-              <CardContent className="p-0 flex-1 flex flex-col min-h-0 h-full">
-                <div
-                  className="overflow-auto flex-1 min-h-0"
-                  style={{
-                    borderRadius: '0.5rem',
-                    border: '1px solid #e5e7eb',
-                    background: '#fafbfc',
-                  }}
-                >
-                  <table className="w-full text-sm border-separate" style={{ borderSpacing: 0 }}>
-                    <thead className="sticky top-0 z-10 bg-gray-100 border-b border-gray-200">
-                      <tr>
-                        <th className="text-center py-2 px-2 text-xs font-semibold border-b border-gray-200">Hour</th>
-                        <th className="text-center py-2 px-2 text-xs font-semibold border-b border-gray-200">Count</th>
-                        <th className="text-center py-2 px-2 text-xs font-semibold border-b border-gray-200">Download</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {hourlyStats.map(({ from, to }, idx) => {
-                        if (!from || !to) return null; // skip this row if data is missing
-                        return (
-                          <tr
-                            key={from}
-                            className={`transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50`}
-                            style={{ height: '36px' }}
-                          >
-                            <td className="text-center font-mono py-1 px-2 text-sm whitespace-nowrap border-b border-gray-100">
-                              {formatHourRange(Number(from.substring(0, 2)), Number(to.substring(0, 2)))}
-                            </td>
-                            <td className="text-center py-1 px-2 text-sm border-b border-gray-100">
-                              {hourlyStats[idx]?.count ?? 0}
-                            </td>
-                            <td className="text-center py-1 px-2 text-sm border-b border-gray-100">
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="text-blue-600 hover:bg-blue-100 h-7 w-7"
-                                disabled={downloadingHour === from}
-                                onClick={async () => {
-                                  setDownloadingHour(from);
-                                  try {
-                                    const res = await fetch(`/api/reports/id-card-download?date=${date}&hour=${from.substring(0, 2)}`);
-                                    const blob = await res.blob();
-                                    saveAs(blob, `id-cards-${date}-${from.substring(0, 2)}.xlsx`);
-                                  } finally {
-                                    setDownloadingHour(null);
-                                  }
-                                }}
-                                aria-label="Download"
-                              >
-                                {downloadingHour === from ? <Spinner className="w-4 h-4 animate-spin" /> : <DownloadIcon className="w-4 h-4" />}
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          {/* Average Stats Section */}
-          <div className="flex flex-col gap-3 justify-start min-w-[180px] max-w-[220px] h-full">
-            <div className="flex flex-col items-center justify-center bg-gray-50 border rounded-lg px-4 py-3 shadow-sm">
-              <span className="text-xs text-gray-500">Avg. ID Cards/Day</span>
-              <span className="font-bold text-lg text-gray-800">{hourlyStats.reduce((sum, h) => sum + (h.count || 0), 0)}</span>
-            </div>
-            <div className="flex flex-col items-center justify-center bg-gray-50 border rounded-lg px-4 py-3 shadow-sm">
-              <span className="text-xs text-gray-500">Avg. Hours Worked</span>
-              <span className="font-bold text-lg text-gray-800">{hourlyStats.filter(h => h.count > 0).length}</span>
-            </div>
-            <div className="flex flex-col items-center justify-center bg-gray-50 border rounded-lg px-4 py-3 shadow-sm">
-              <span className="text-xs text-gray-500">Est. Days to Finish</span>
-              <span className="font-bold text-lg text-gray-800">
-                {stats && stats.remaining
-                  ? Math.ceil(stats.remaining / (hourlyStats.reduce((sum, h) => sum + (h.count || 0), 0) || 1))
-                  : '-'}
-              </span>
-            </div>
-          </div>
-          {/* Active Users Section */}
-          <div className="w-full md:w-80 flex-shrink-0 flex flex-col">
-            <Card className="flex flex-col min-h-[220px] max-h-[500px]">
-              <CardHeader>
-                <CardTitle className="text-lg mb-3">Active Users</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-auto">
-                <ul className="divide-y divide-gray-200">
-                  {filteredActiveUsers.map((user) => (
-                    <li key={user.email} className="py-3 flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-800 truncate">{user.name}</div>
-                        <div className="text-xs text-gray-500 truncate">{user.email}</div>
-                      </div>
-                      <Badge variant={user.type === 'Admin' ? 'default' : 'secondary'}>{user.type}</Badge>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        {/* Removed Average Stats and Active Users sections */}
       </div>
     </div>
-  );
+  ) : (
+    <div>
+      <h1>You are not authorized to access this page</h1>
+    </div>
+  ));
 }

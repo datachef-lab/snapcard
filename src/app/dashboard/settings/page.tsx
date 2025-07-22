@@ -11,6 +11,7 @@ import { IdCardTemplate } from '@/lib/db/schema';
 import { Switch } from '@/components/ui/switch';
 import Image from 'next/image';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { useAuth } from '@/hooks/use-auth';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_PATH!;
 
@@ -151,6 +152,7 @@ function TemplateModal({
 }
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [templates, setTemplates] = useState<IdCardTemplate[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -207,7 +209,7 @@ export default function SettingsPage() {
     fetchTemplates();
   };
 
-  const handleFormChange = (field: keyof IdCardTemplate, value: any) => {
+  const handleFormChange = (field: string, value: any) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -255,7 +257,7 @@ export default function SettingsPage() {
     fetchTemplates();
   };
 
-  return (
+  return (user?.isAdmin ? (
     <div className="mt-10 px-4">
       <Card className="p-6">
         <div className="flex justify-between items-center border-b pb-3 mb-6">
@@ -327,5 +329,9 @@ export default function SettingsPage() {
         initialPreviewUrl={editTemplate ? `/templates/${editTemplate.id}.jpeg` : null}
       />
     </div>
-  );
+  ) : (
+    <div>
+      <h1>You are not authorized to access this page</h1>
+    </div>
+  ));
 }
