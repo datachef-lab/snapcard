@@ -1,4 +1,6 @@
 "use client";
+import { saveAs } from 'file-saver';
+import { format } from "date-fns";
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +13,7 @@ import { User, IdCard, Clock, BadgeCheck } from 'lucide-react';
 import { pusherClient } from '@/lib/pusher-client';
 import Pusher from 'pusher-js';
 import { useAuth } from '@/hooks/use-auth';
+import { downloadIdCardDetails, fetchAdmissionYears, fetchDatesByAdmissionYear } from './action';
 
 interface Stats {
   totalStudents: number;
@@ -20,8 +23,10 @@ interface Stats {
 }
 
 interface HourlyStat {
-  hour: string;
   count: number;
+  from: string;
+  to: string;
+  issue_ids: number[];
 }
 
 interface User {
@@ -36,13 +41,15 @@ interface Student {
   time: string;
 }
 
-const ADMISSION_YEARS = ['2021', '2022', '2023', '2024'];
-const DATES_BY_YEAR: Record<string, string[]> = {
-  '2021': ['2025-07-21', '2025-07-20', '2025-07-19'],
-  '2022': ['2025-07-18', '2025-07-17'],
-  '2023': ['2025-07-16', '2025-07-15'],
-  '2024': ['2025-07-14', '2025-07-13'],
-};
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_PATH!;
+
+// const ADMISSION_YEARS = ['2021', '2022', '2023', '2024'];
+// const DATES_BY_YEAR: Record<string, string[]> = {
+//   '2021': ['2025-07-21', '2025-07-20', '2025-07-19'],
+//   '2022': ['2025-07-18', '2025-07-17'],
+//   '2023': ['2025-07-16', '2025-07-15'],
+//   '2024': ['2025-07-14', '2025-07-13'],
+// };
 
 const HOUR_LABELS = [
   { from: 9, to: 10 },
@@ -72,17 +79,17 @@ function getMockStats(admissionYear: string, date: string): Stats {
   };
 }
 
-function getMockHourlyStats(date: string): HourlyStat[] {
-  return [
-    { hour: '09:00', count: 5 },
-    { hour: '10:00', count: 8 },
-    { hour: '11:00', count: 12 },
-    { hour: '12:00', count: 7 },
-    { hour: '13:00', count: 6 },
-    { hour: '14:00', count: 4 },
-    { hour: '15:00', count: 3 },
-  ];
-}
+// function getMockHourlyStats(date: string): HourlyStat[] {
+//   return [
+//     { hour: '09:00', count: 5 },
+//     { hour: '10:00', count: 8 },
+//     { hour: '11:00', count: 12 },
+//     { hour: '12:00', count: 7 },
+//     { hour: '13:00', count: 6 },
+//     { hour: '14:00', count: 4 },
+//     { hour: '15:00', count: 3 },
+//   ];
+// }
 
 function getMockActiveUsers(): User[] {
   return [
@@ -104,12 +111,19 @@ function getMockActiveUsers(): User[] {
   ];
 }
 
-function getMockStudentsForHour(hour: string): Student[] {
-  return [
-    { name: 'John Doe', uid: '123', time: `${hour}:15` },
-    { name: 'Jane Smith', uid: '456', time: `${hour}:42` },
-  ];
-}
+// function getMockStudentsForHour(hour: string): Student[] {
+//   return [
+//     { name: 'John Doe', uid: '123', time: `${hour}:15` },
+//     { name: 'Jane Smith', uid: '456', time: `${hour}:42` },
+//   ];
+// }
+const formatHourSlot = (hour: number) => {
+  const start = `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
+  const endHour = (hour + 1) % 24;
+  const end = `${endHour % 12 || 12}:00 ${endHour < 12 ? 'AM' : 'PM'}`;
+  return `${start} - ${end}`;
+};
+
 
 function getInitials(name: string) {
   return name
@@ -121,11 +135,21 @@ function getInitials(name: string) {
 
 export default function ReportsPage() {
   const { user } = useAuth();
-  const [admissionYear, setAdmissionYear] = useState(ADMISSION_YEARS[0]);
-  const [date, setDate] = useState(DATES_BY_YEAR[ADMISSION_YEARS[0]][0]);
+  const [admissionYears, setAdmissionYears] = useState<string[]>([]);
+  const [admissionYear, setAdmissionYear] = useState<string | null>(null);
+  const [dates, setDates] = useState<string[]>([]);
+  const [date, setDate] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [hourlyStats, setHourlyStats] = useState<HourlyStat[]>([]);
   const [activeUsers, setActiveUsers] = useState<User[]>([]);
+
+  useEffect(() => {
+    fetchAdmissionYears()
+      .then(data =>  {
+        setAdmissionYear(data[0]);
+        setAdmissionYears(data);
+      })
+  }, []);
 
   // Use authenticated user info
   const currentUser = user
@@ -173,6 +197,7 @@ export default function ReportsPage() {
 
   // Fetch stats and hourly on mount and when year/date changes
   useEffect(() => {
+    if (!admissionYear || !date) return;
     async function fetchStats() {
       const res = await fetch(`/api/reports/stats?year=${admissionYear}&date=${date}`);
       const data = await res.json();
@@ -183,6 +208,21 @@ export default function ReportsPage() {
     }
     fetchStats();
   }, [admissionYear, date]);
+
+  
+
+useEffect(() => {
+  if (!admissionYear) return;
+
+  fetchDatesByAdmissionYear(admissionYear).then(data => {
+    const formattedDates = data.map(ele =>
+      format(new Date(ele.date), "dd-MM-yyyy")
+    );
+    setDates(formattedDates);
+    setDate(formattedDates[formattedDates.length - 1]);
+  });
+}, [admissionYear]);
+
 
   // Subscribe to Pusher for real-time stats updates
   useEffect(() => {
@@ -199,27 +239,28 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-    setDate(DATES_BY_YEAR[admissionYear][0]);
+    // setDate(DATES_BY_YEAR[admissionYear][0]);
   }, [admissionYear]);
 
   const handleDownloadHour = (hour: string) => {
-    const students = getMockStudentsForHour(hour);
-    const csvRows = [
-      'Name,UID,Time',
-      ...students.map(s => `${s.name},${s.uid},${s.time}`)
-    ];
-    const csvContent = csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `id-cards-${admissionYear}-${date}-${hour}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // const students = getMockStudentsForHour(hour);
+    // const csvRows = [
+    //   'Name,UID,Time',
+    //   ...students.map(s => `${s.name},${s.uid},${s.time}`)
+    // ];
+    // const csvContent = csvRows.join('\n');
+    // const blob = new Blob([csvContent], { type: 'text/csv' });
+    // const url = URL.createObjectURL(blob);
+    // const a = document.createElement('a');
+    // a.href = url;
+    // a.download = `id-cards-${admissionYear}-${date}-${hour}.csv`;
+    // a.click();
+    // URL.revokeObjectURL(url);
   };
 
-  const handleDownloadAllZip = () => {
-    const blob = new Blob(['Mock ZIP content'], { type: 'application/zip' });
+  const handleDownloadAllZip = async () => {
+    const res = await fetch(`${BASE_URL}/api/reports/id-cards-zip?admissionYear=${admissionYear}`);
+    const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -227,6 +268,7 @@ export default function ReportsPage() {
     a.click();
     URL.revokeObjectURL(url);
   };
+  
 
   // Table and users max heights (adjust as needed for your layout)
   const tableMaxHeight = '260px';
@@ -243,22 +285,24 @@ export default function ReportsPage() {
       <div className="flex items-center justify-between px-6 pt-6 pb-2 overflow-hidden border-b border-gray-200 mb-2 bg-white" style={{flex: '0 0 auto'}}>
         <h1 className="text-3xl font-bold tracking-tight">Reports Dashboard</h1>
         <div className="flex items-center gap-4">
-          <Select value={admissionYear} onValueChange={setAdmissionYear}>
+          Admission Year: 
+          <Select value={admissionYear ?? ""} onValueChange={setAdmissionYear}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Admission Year" />
             </SelectTrigger>
             <SelectContent>
-              {ADMISSION_YEARS.map((year) => (
+              {admissionYears.map((year) => (
                 <SelectItem key={year} value={year}>{year}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={date} onValueChange={setDate}>
+          Date: 
+          <Select value={date ?? ""} onValueChange={setDate ?? ""}>
             <SelectTrigger className="w-44">
               <SelectValue placeholder="Date" />
             </SelectTrigger>
             <SelectContent>
-              {DATES_BY_YEAR[admissionYear].map((d) => (
+              {dates.map((d) => (
                 <SelectItem key={d} value={d}>{d}</SelectItem>
               ))}
             </SelectContent>
@@ -312,9 +356,15 @@ export default function ReportsPage() {
           <div className="flex-1 flex flex-col min-w-0 h-full">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-lg">ID Cards Per Hour</h3>
+              <div className='flex gap-2'>
+
+              {/* <Button onClick={handleDownloadAllZip} className="bg-blue-600 text-white hover:bg-blue-700">
+                Download All 
+              </Button> */}
               <Button onClick={handleDownloadAllZip} className="bg-blue-600 text-white hover:bg-blue-700">
-                Download All ID Cards (ZIP)
+                Download Id-Cards (ZIP)
               </Button>
+              </div>
             </div>
             <Card className="p-0 flex-1 flex flex-col min-h-0 shadow rounded-lg border h-full">
               <CardContent className="p-0 flex-1 flex flex-col min-h-0 h-full">
@@ -335,14 +385,14 @@ export default function ReportsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {HOUR_LABELS.map(({ from, to }, idx) => (
+                      {hourlyStats.map(({ from, to }, idx) => (
                         <tr
                           key={from}
                           className={`transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50`}
                           style={{ height: '36px' }}
                         >
                           <td className="text-center font-mono py-1 px-2 text-sm whitespace-nowrap border-b border-gray-100">
-                            {formatHourRange(from, to)}
+                            {formatHourRange(Number(from.substring(0, 2)), Number(to.substring(0, 2)))}
                           </td>
                           <td className="text-center py-1 px-2 text-sm border-b border-gray-100">
                             {hourlyStats[idx]?.count ?? 0}
@@ -352,8 +402,15 @@ export default function ReportsPage() {
                               size="icon"
                               variant="ghost"
                               className="text-blue-600 hover:bg-blue-100 h-7 w-7"
-                              onClick={() => handleDownloadHour(hourlyStats[idx]?.hour ?? '')}
-                              disabled={!hourlyStats[idx]?.hour}
+                              onClick={async () => {
+                                const res = await fetch(`/api/reports/id-card-download?date=${date}&hour=${from.substring(0, 2)}`);
+                                const blob = await res.blob();
+                                const file = new Blob([blob], {
+                                  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                });
+                                saveAs(file, `id-cards-${date}-${from.substring(0, 2)}.xlsx`);
+                              }}
+                              // disabled={!hourlyStats[idx]?.hour}
                               aria-label="Download"
                             >
                               <DownloadIcon className="w-4 h-4" />

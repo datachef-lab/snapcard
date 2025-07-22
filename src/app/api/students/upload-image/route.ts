@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     const originalName = file.name || "image";
     const ext = path.extname(originalName) || ".jpg";
     const fileName = `${idCardIssueId}${ext}`;
-    const filePath = path.join(SNAPCARD_IMAGE_BASE_PATH, fileName);
+    const filePath = path.join(`${SNAPCARD_IMAGE_BASE_PATH}/idcards`, fileName);
 
     await fs.mkdir(SNAPCARD_IMAGE_BASE_PATH, { recursive: true });
     // This will overwrite any existing image for the same id_card_issue_id

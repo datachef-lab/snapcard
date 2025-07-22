@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (!idCardIssueId) {
     return new NextResponse("Missing id_card_issue_id", { status: 400 });
   }
-  const imagePath = path.join(SNAPCARD_IMAGE_BASE_PATH, `${idCardIssueId}.png`);
+  const imagePath = path.join(SNAPCARD_IMAGE_BASE_PATH, "idcards", `${idCardIssueId}.png`);
   try {
     console.log("fired the fetch image api for:", idCardIssueId);
     const imageBuffer = await fs.readFile(imagePath);

@@ -27,7 +27,7 @@ export async function findStudents({
 }> {
     const offset = (page - 1) * size;
 
-    const whereConditions: string[] = [];
+    const whereConditions: string[] = ["ay.id >= 18", "spd.academicyearid = ay.id"];
     const params: (string | number)[] = [];
 
     if (uid) {
@@ -133,7 +133,7 @@ export async function findStudents({
 
         JOIN studentpaperlinkingpaperlist splp ON splp.id = spls.parent_id
         JOIN studentpaperlinkingmain spm ON spm.id = splp.parent_id
-
+JOIN accademicyear ay ON ay.sessionId = spm.sessionId 
         JOIN course c ON c.id = spm.courseId
         JOIN shift sh ON sh.id = spm.shiftId
         JOIN section sec ON sec.id = spm.sectionId

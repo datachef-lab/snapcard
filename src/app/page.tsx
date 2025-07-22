@@ -73,6 +73,7 @@ export default function Home() {
   const [timer, setTimer] = useState(180); // 3 minutes in seconds
   const [canResend, setCanResend] = useState(false);
   const router = useRouter();
+  
   const auth = useContext(AuthContext);
 
   useEffect(() => {

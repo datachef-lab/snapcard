@@ -34,7 +34,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   try {
     await deleteIdCardIssue(id);
     // Also delete the image file
-    const imagePath = path.join(SNAPCARD_IMAGE_BASE_PATH, `${id}.png`);
+    const imagePath = path.join(SNAPCARD_IMAGE_BASE_PATH, "idcards", `${id}.png`);
     try {
       await fs.unlink(imagePath);
     } catch (e) {

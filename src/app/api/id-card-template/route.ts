@@ -70,10 +70,17 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const formData = await req.formData();
   const templateFile = formData.get('templateFile') as File | null;
-  const templateData = JSON.parse(formData.get('templateData') as string) as IdCardTemplate;
+  const rawData = formData.get('templateData');
+
+  if (!rawData) {
+    return NextResponse.json({ success: false, error: "Missing template data." }, { status: 400 });
+  }
+
+  const templateData = JSON.parse(rawData as string) as IdCardTemplate;
   const updated = await admissionYearService.updateIdCardTemplate(templateData, templateFile);
   return NextResponse.json({ success: true, data: updated });
 }
+
 
 // DELETE: Delete a template by id
 export async function DELETE(req: NextRequest) {

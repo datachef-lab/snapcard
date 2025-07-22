@@ -32,12 +32,17 @@ export async function getIdCardTemplateById(id: number) {
 }
 
 export async function updateIdCardTemplate(givenTemplate: IdCardTemplate, templateFile: File | null) {
-    const { id, ...rest } = givenTemplate;
-    const [updated] = await dbPostgres.update(idCardTemplateTable).set(rest).where(eq(idCardTemplateTable.id, id!)).returning();
-    if (updated && templateFile) {
-      await saveTemplateFile(updated.id, templateFile);
+    try {
+      console.log("givenTemplate:", givenTemplate);
+      const { id, createdAt, updatedAt, ...rest } = givenTemplate;
+      const [updated] = await dbPostgres.update(idCardTemplateTable).set(rest).where(eq(idCardTemplateTable.id, id!)).returning();
+      if (updated && templateFile) {
+        await saveTemplateFile(updated.id, templateFile);
+      }
+      return updated;
+    } catch (error) {
+      console.log(error)
     }
-    return updated;
 }
 
 export async function deleteIdCardTemplate(id: number) {

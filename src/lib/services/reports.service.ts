@@ -1,6 +1,7 @@
 import { RowDataPacket } from "mysql2";
 import { dbPostgres, query } from "../db";
 import { idCardTemplateTable } from "../db/schema";
+import { parse } from "date-fns";
 
 export async function getAdmissionYears() {
     const result = await dbPostgres
@@ -10,6 +11,9 @@ export async function getAdmissionYears() {
 }
 
 export async function getStats(year: string, date: string) {
+    const parsedDate = parse(date, "dd-MM-yyyy", new Date());
+const yearNumber = parsedDate.getFullYear();
+    console.log("date:", date, yearNumber);
     const [{ totalStudents }] = await query<RowDataPacket[]>(
         `SELECT COUNT(std.id) AS totalStudents
          FROM studentpersonaldetails std
@@ -22,7 +26,7 @@ export async function getStats(year: string, date: string) {
         `SELECT COUNT(DISTINCT student_id_fk) AS totalIdCards
          FROM id_card_issues
          WHERE issue_status = 'ISSUED' AND YEAR(created_at) = ?`,
-        [year]
+        [yearNumber]
     ) as [{ totalIdCards: number }];
 
     const remaining = (totalStudents || 0) - (totalIdCards || 0);

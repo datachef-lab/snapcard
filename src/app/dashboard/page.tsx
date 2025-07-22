@@ -15,9 +15,12 @@ import QRCode from "qrcode"
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
+import { IdCardTemplate } from "@/lib/db/schema";
+import { useAuth } from "@/hooks/use-auth";
 
 
 export default function Page() {
+  const {user} = useAuth();
   const [value, setValue] = useState("");
   // const router = useRouter();
   // const pathname = usePathname();
@@ -35,19 +38,22 @@ export default function Page() {
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
-  const [positions, setPositions] = useState({
-    name: { x: 330, y: 580 },
-    course: { x: 323, y: 620 },
-    uid: { x: 215, y: 680 },
-    mobile: { x: 240, y: 710 },
-    bloodGroup: { x: 210, y: 776 },
-    sequrityQ: { x: 270, y: 776 },
-    qrcode: { x: 375, y: 656 },
-    validTillDate: { x: 129, y: 845 },
+  const [positions, setPositions] = useState<IdCardTemplate>({
+    nameCoordinates: { x: 330, y: 580 },
+    courseCoordinates: { x: 323, y: 620 },
+    uidCoordinates: { x: 215, y: 680 },
+    mobileCoordinates: { x: 240, y: 710 },
+    bloodGroupCoordinates: { x: 210, y: 776 },
+    sportsQuotaCoordinates: { x: 270, y: 776 },
+    qrcodeCoordinates: { x: 375, y: 656 },
+    validTillDateCoordinates: { x: 129, y: 845 },
+    admissionYear: "",
+    photoDimension: {},
+    qrcodeSize: 190,
   });
-  const [qrcodeSize, setQrcodeSize] = useState(190);
+  // const [qrcodeSize, setQrcodeSize] = useState(190);
   const [validTillDate, setValidTillDate] = useState("");
-  const [photoRect, setPhotoRect] = useState({ x: 240, y: 280, width: 200, height: 250 });
+  // const [photoRect, setPhotoRect] = useState({ x: 240, y: 280, width: 200, height: 250 });
   const [issueType, setIssueType] = useState("ISSUED");
   const [remarks, setRemarks] = useState("First card issued");
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -56,7 +62,11 @@ export default function Page() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteIssueId, setDeleteIssueId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [templates, setTemplates] = useState<IdCardTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<IdCardTemplate | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Update remarks when issueType changes
   useEffect(() => {
@@ -77,6 +87,19 @@ export default function Page() {
   const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
   useEffect(() => {
+    if (userDetails && templates.length > 0) {
+      const tmpt =templates.find(ele => ele.admissionYear == (userDetails).academicYear);
+      if (tmpt) {
+        setSelectedTemplate(tmpt);
+        setPositions(tmpt);
+
+        setPreviewUrl(`${BASE_PATH}/api/id-card-template/${tmpt.id}`);
+        setFile(null);
+      }
+    }
+  }, [userDetails, templates]);
+
+  useEffect(() => {
     const fetchStudent = async () => {
       if (!value) {
         setUserDetails(null);
@@ -91,6 +114,7 @@ export default function Page() {
         const data = await res.json();
         if (data.content && data.content.length > 0) {
           setUserDetails(data.content[0]);
+           
           setNotFound(false);
           // Fetch template for this student's admission year
           const admissionYear = data.content[0].academicYear;
@@ -99,18 +123,18 @@ export default function Page() {
             if (templateRes.ok) {
               const template = await templateRes.json();
               if (template) {
-                setPositions({
-                  name: template.nameCoordinates,
-                  course: template.courseCoordinates,
-                  uid: template.uidCoordinates,
-                  mobile: template.mobileCoordinates,
-                  bloodGroup: template.bloodGroupCoordinates,
-                  sequrityQ: template.sportsQuotaCoordinates, // or template.securityQCoordinates if exists
-                  qrcode: template.qrcodeCoordinates,
-                  validTillDate: template.validTillDateCoordinates || { x: 0, y: 0 },
-                });
-                setQrcodeSize(template.qrcodeSize);
-                setPhotoRect(template.photoDimension);
+                // setPositions({
+                //   nameCoordinates: template.nameCoordinates,
+                //   courseCoordinates: template.courseCoordinates,
+                //   uidCoordinates: template.uidCoordinates,
+                //   mobile: template.mobileCoordinates,
+                //   bloodGroup: template.bloodGroupCoordinates,
+                //   sequrityQ: template.sportsQuotaCoordinates, // or template.securityQCoordinates if exists
+                //   qrcode: template.qrcodeCoordinates,
+                //   validTillDate: template.validTillDateCoordinates || { x: 0, y: 0 },
+                // });
+                // setQrcodeSize(template.qrcodeSize);
+                // setPhotoRect(template.photoDimension);
               }
             }
           }
@@ -130,6 +154,22 @@ export default function Page() {
     fetchStudent();
   }, [value]);
 
+  const fetchTemplates = async () => {
+    const res = await fetch(`${BASE_PATH}/api/id-card-template`);
+    if (res.ok) {
+      const data = await res.json();
+      console.log(data)
+      setTemplates(Array.isArray(data.data) ? data.data : []);
+    }
+  };
+
+  useEffect(() => {
+    if (templates.length > 0) return;
+    fetchTemplates();
+  }, [templates])
+  
+
+
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current?.getScreenshot()
     if (imageSrc) {
@@ -139,7 +179,7 @@ export default function Page() {
   }, [webcamRef])
 
   const generateIDCard = useCallback(async () => {
-    if (!capturedImage || !canvasRef.current) return
+    if (!capturedImage || !canvasRef.current || !previewUrl) return
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext("2d")
@@ -166,10 +206,10 @@ export default function Page() {
 
       userImg.onload = async () => {
         // Photo placement coordinates for the clean template
-        const photoX = photoRect.x // X position of photo area
-        const photoY = photoRect.y // Y position of photo area
-        const photoWidth = photoRect.width // Width of photo area
-        const photoHeight = photoRect.height // Height of photo area
+        const photoX = positions.photoDimension.x //  photoRect.x // X position of photo area
+        const photoY = positions.photoDimension.y // photoRect.y // Y position of photo area
+        const photoWidth = positions.photoDimension.width // photoRect.width // Width of photo area
+        const photoHeight = positions.photoDimension.height // photoRect.height // Height of photo area
 
         // Save context for clipping
         ctx.save()
@@ -212,38 +252,38 @@ export default function Page() {
         // Name
         if (userDetails && userDetails.name) {
           ctx.font = "bold 32px Arial"
-          ctx.fillText(userDetails.name.toUpperCase(), positions.name.x, positions.name.y)
+          ctx.fillText(userDetails.name.toUpperCase(), positions.nameCoordinates.x, positions.nameCoordinates.y)
         }
 
         // Course
         if (userDetails && userDetails.courseName) {
           ctx.font = "24px Arial"
-          ctx.fillText(userDetails.courseName, positions.course.x, positions.course.y)
+          ctx.fillText(userDetails.courseName, positions.courseCoordinates.x, positions.courseCoordinates.y)
         }
 
         // UID
         if (userDetails && userDetails.codeNumber) {
           ctx.font = "bold 20px Arial"
-          ctx.fillText(`UID: ${userDetails.codeNumber}`, positions.uid.x, positions.uid.y)
+          ctx.fillText(`UID: ${userDetails.codeNumber}`, positions.uidCoordinates.x, positions.uidCoordinates.y)
         }
 
         // Mobile
         if (userDetails && userDetails.emrgnResidentPhNo) {
           ctx.font = "bold 20px Arial"
-          ctx.fillText(`MOB NO.: ${userDetails.emrgnResidentPhNo}`, positions.mobile.x, positions.mobile.y)
+          ctx.fillText(`MOB NO.: ${userDetails.emrgnResidentPhNo}`, positions.mobileCoordinates.x, positions.mobileCoordinates.y)
         }
 
         // Blood Group
         if (userDetails && userDetails.bloodGroupName) {
           ctx.font = "bold 24px Arial"
-          ctx.fillText(`${userDetails.bloodGroupName}`, positions.bloodGroup.x, positions.bloodGroup.y)
+          ctx.fillText(`${userDetails.bloodGroupName}`, positions.bloodGroupCoordinates.x, positions.bloodGroupCoordinates.y)
         }
 
         // SecurityQ (Security Question/Answer)
         if (userDetails && userDetails.securityQ) {
           ctx.font = "bold 24px Arial"
           ctx.textAlign = "left"
-          ctx.fillText(String(userDetails.securityQ), positions.sequrityQ.x, positions.sequrityQ.y)
+          ctx.fillText(String(userDetails.securityQ), positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
           ctx.textAlign = "center"
         }
 
@@ -251,17 +291,17 @@ export default function Page() {
         if (validTillDate) {
           ctx.font = "bold 16px Arial"
           ctx.textAlign = "left"
-          ctx.fillText(`Valid Till: ${validTillDate}`, positions.validTillDate.x, positions.validTillDate.y)
+          ctx.fillText(`Valid Till: ${validTillDate}`, positions.validTillDateCoordinates.x, positions.validTillDateCoordinates.y)
           ctx.textAlign = "center"
         }
 
         // QR Code (containing UID)
         if (userDetails && userDetails.codeNumber) {
           try {
-            const qrDataUrl = await QRCode.toDataURL(userDetails.codeNumber, { margin: 0, width: qrcodeSize })
+            const qrDataUrl = await QRCode.toDataURL(userDetails.codeNumber, { margin: 0, width: positions.qrcodeSize })
             const qrImg = new window.Image()
             qrImg.onload = () => {
-              ctx.drawImage(qrImg, positions.qrcode.x, positions.qrcode.y, qrcodeSize, qrcodeSize)
+              ctx.drawImage(qrImg, positions.qrcodeCoordinates.x, positions.qrcodeCoordinates.y,positions. qrcodeSize, positions.qrcodeSize)
               // Convert canvas to image and set it
               const generatedImageUrl = canvas.toDataURL("image/png", 1.0)
               setGeneratedCard(generatedImageUrl)
@@ -290,18 +330,19 @@ export default function Page() {
     }
 
     // Use the clean template image
-    templateImg.src = `${process.env.NEXT_PUBLIC_BASE_PATH}/id-template-new-frontend.jpeg`
-  }, [capturedImage, userDetails, positions, qrcodeSize, validTillDate, photoRect])
+    // templateImg.src = `${process.env.NEXT_PUBLIC_BASE_PATH}/id-template-new-frontend.jpeg`
+    templateImg.src = previewUrl;
+  }, [capturedImage, userDetails, positions, positions.qrcodeSize, validTillDate, positions.photoDimension])
 
   useEffect(() => {
     if (capturedImage && userDetails && userDetails.name && userDetails.courseName) {
       generateIDCard();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userDetails, capturedImage, positions, qrcodeSize, validTillDate, photoRect]);
+  }, [userDetails, capturedImage, positions, positions.qrcodeSize, validTillDate, positions.photoDimension]);
 
   const downloadCard = () => {
-    if (!generatedCard && !userDetails) return
+    if (!generatedCard && !userDetails && !user?.isAdmin) return
 
     const link = document.createElement("a")
     link.download = `${userDetails!.name || "ID"}_card.png`
@@ -578,10 +619,10 @@ export default function Page() {
                             placeholder="Enter your full name"
                             className="min-w-[180px] flex-1"
                           />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, name: { ...p.name, x: p.name.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, name: { ...p.name, x: p.name.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, name: { ...p.name, y: p.name.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, name: { ...p.name, y: p.name.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, x: p.nameCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, x: p.nameCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, y: p.nameCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, y: p.nameCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
                         </div>
                       </div>
                       <div className="flex items-center">
@@ -594,10 +635,10 @@ export default function Page() {
                             placeholder="Enter your course"
                             className="min-w-[180px] flex-1"
                           />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, course: { ...p.course, x: p.course.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, course: { ...p.course, x: p.course.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, course: { ...p.course, y: p.course.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, course: { ...p.course, y: p.course.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, x: p.courseCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, x: p.courseCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, y: p.courseCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, y: p.courseCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
                         </div>
                       </div>
                       <div className="flex items-center">
@@ -610,10 +651,10 @@ export default function Page() {
                             placeholder="Enter your UID"
                             className="min-w-[180px] flex-1"
                           />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uid: { ...p.uid, x: p.uid.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uid: { ...p.uid, x: p.uid.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uid: { ...p.uid, y: p.uid.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uid: { ...p.uid, y: p.uid.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, x: p.uidCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, x: p.uidCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, y: p.uidCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, y: p.uidCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
                         </div>
                       </div>
                       <div className="flex items-center">
@@ -626,10 +667,10 @@ export default function Page() {
                             placeholder="Enter your mobile number"
                             className="min-w-[180px] flex-1"
                           />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobile: { ...p.mobile, x: p.mobile.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobile: { ...p.mobile, x: p.mobile.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobile: { ...p.mobile, y: p.mobile.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobile: { ...p.mobile, y: p.mobile.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, x: p.mobileCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, x: p.mobileCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, y: p.mobileCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, y: p.mobileCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
                         </div>
                       </div>
                       <div className="flex items-center">
@@ -642,14 +683,14 @@ export default function Page() {
                             placeholder="Enter your blood group"
                             className="min-w-[180px] flex-1"
                           />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroup: { ...p.bloodGroup, x: p.bloodGroup.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroup: { ...p.bloodGroup, x: p.bloodGroup.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroup: { ...p.bloodGroup, y: p.bloodGroup.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroup: { ...p.bloodGroup, y: p.bloodGroup.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, x: p.bloodGroupCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, x: p.bloodGroupCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, y: p.bloodGroupCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, y: p.bloodGroupCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
                         </div>
                       </div>
                       <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">Security Question</span>
+                        <span className="w-48 font-semibold text-right mr-4">Sports Quota</span>
                         <div className="flex flex-1 items-center gap-1">
                           <Input
                             id="securityQ"
@@ -658,10 +699,10 @@ export default function Page() {
                             placeholder="Enter your security question"
                             className="min-w-[180px] flex-1"
                           />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sequrityQ: { ...p.sequrityQ, x: p.sequrityQ.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sequrityQ: { ...p.sequrityQ, x: p.sequrityQ.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sequrityQ: { ...p.sequrityQ, y: p.sequrityQ.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sequrityQ: { ...p.sequrityQ, y: p.sequrityQ.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, x: p.sportsQuotaCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, x: p.sportsQuotaCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, y: p.sportsQuotaCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, y: p.sportsQuotaCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
                         </div>
                       </div>
                       <div className="flex items-center">
@@ -684,44 +725,44 @@ export default function Page() {
                             inputMode="numeric"
                             maxLength={10}
                           />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDate: { ...p.validTillDate, x: p.validTillDate.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDate: { ...p.validTillDate, x: p.validTillDate.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDate: { ...p.validTillDate, y: p.validTillDate.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDate: { ...p.validTillDate, y: p.validTillDate.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, x: p.validTillDateCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, x: p.validTillDateCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, y: p.validTillDateCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, y: p.validTillDateCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
                         </div>
                       </div>
                       <div className="flex items-center">
                         <span className="w-48 font-semibold text-right mr-4">QR Code</span>
                         <div className="flex flex-1 items-center gap-1">
                           <span className="text-xs text-gray-500">X:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcode: { ...p.qrcode, x: p.qrcode.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcode: { ...p.qrcode, x: p.qrcode.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, x: p.qrcodeCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, x: p.qrcodeCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
                           <span className="text-xs text-gray-500 ml-2">Y:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcode: { ...p.qrcode, y: p.qrcode.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcode: { ...p.qrcode, y: p.qrcode.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, y: p.qrcodeCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, y: p.qrcodeCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
                           <span className="text-xs text-gray-500 ml-2">Size:</span>
-                          <Button size="icon" variant="outline" onClick={() => setQrcodeSize(s => Math.max(20, s - 5))}>-</Button>
-                          <span className="px-2">{qrcodeSize}</span>
-                          <Button size="icon" variant="outline" onClick={() => setQrcodeSize(s => Math.min(300, s + 5))}>+</Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(prev => ({...prev, qrcodeSize: Math.max(20, prev.qrcodeSize - 5)}))}>-</Button>
+                          <span className="px-2">{positions.qrcodeSize}</span>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(prev => ({...prev, qrcodeSize: Math.min(300, prev.qrcodeSize + 5)}))}>+</Button>
                         </div>
                       </div>
                       <div className="flex items-center">
                         <span className="w-48 font-semibold text-right mr-4">Photo</span>
                         <div className="flex flex-1 items-center gap-1">
                           <span className="text-xs text-gray-500">X:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPhotoRect(r => ({ ...r, x: r.x - 1 }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPhotoRect(r => ({ ...r, x: r.x + 1 }))}><ChevronRight className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, x: r.photoDimension.x - 1} }))}><ChevronLeft className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, x: r.photoDimension.x + 1} }))}><ChevronRight className="w-4 h-4" /></Button>
                           <span className="text-xs text-gray-500 ml-2">Y:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPhotoRect(r => ({ ...r, y: r.y - 1 }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPhotoRect(r => ({ ...r, y: r.y + 1 }))}><ChevronDown className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, y: r.photoDimension.y - 1} }))}><ChevronUp className="w-4 h-4" /></Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, y: r.photoDimension.y + 1} }))}><ChevronDown className="w-4 h-4" /></Button>
                           <span className="text-xs text-gray-500 ml-2">Width:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPhotoRect(r => ({ ...r, width: Math.max(20, r.width - 5) }))}>-</Button>
-                          <span className="px-2">{photoRect.width}</span>
-                          <Button size="icon" variant="outline" onClick={() => setPhotoRect(r => ({ ...r, width: Math.min(400, r.width + 5) }))}>+</Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension:{ ...r.photoDimension, width: Math.max(20, r.photoDimension.width - 5)} }))}>-</Button>
+                          <span className="px-2">{positions.photoDimension.width}</span>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, width: Math.min(400, r.photoDimension.width + 5)} }))}>+</Button>
                           <span className="text-xs text-gray-500 ml-2">Height:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPhotoRect(r => ({ ...r, height: Math.max(20, r.height - 5) }))}>-</Button>
-                          <span className="px-2">{photoRect.height}</span>
-                          <Button size="icon" variant="outline" onClick={() => setPhotoRect(r => ({ ...r, height: Math.min(600, r.height + 5) }))}>+</Button>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, height: Math.max(20, r.photoDimension.height - 5)} }))}>-</Button>
+                          <span className="px-2">{positions.photoDimension.height}</span>
+                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, height: Math.min(600, r.photoDimension.height + 5)} }))}>+</Button>
                         </div>
                       </div>
                     </div>

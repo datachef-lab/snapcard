@@ -12,6 +12,8 @@ import { Switch } from '@/components/ui/switch';
 import Image from 'next/image';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_PATH!;
+
 function CoordinateInput({ label, value, onChange }: { label: string, value: { x: number, y: number }, onChange: (v: { x: number, y: number }) => void }) {
   return (
     <div className="flex flex-col gap-1 mb-2">
@@ -159,7 +161,7 @@ export default function SettingsPage() {
   const [academicYears, setAcademicYears] = useState<string[]>([]);
 
   const fetchTemplates = async () => {
-    const res = await fetch('/api/id-card-template');
+    const res = await fetch(`${BASE_URL}/api/id-card-template`);
     if (res.ok) {
       const data = await res.json();
       console.log(data)
@@ -171,7 +173,7 @@ export default function SettingsPage() {
     fetchTemplates();
     // Fetch academic years from backend
     async function fetchYears() {
-      const res = await fetch('/api/accademicyear');
+      const res = await fetch(`${BASE_URL}/api/accademicyear`);
       if (res.ok) {
         const data = await res.json();
         setAcademicYears(Array.isArray(data) ? data : []);
@@ -183,7 +185,7 @@ export default function SettingsPage() {
   // Fetch and show template image on edit open
   useEffect(() => {
     if (showEditModal && editTemplate) {
-      setPreviewUrl(`/api/id-card-template/${editTemplate.id}`);
+      setPreviewUrl(`${BASE_URL}/api/id-card-template/${editTemplate.id}`);
       setFile(null);
     }
   }, [showEditModal, editTemplate]);
@@ -201,7 +203,7 @@ export default function SettingsPage() {
 
   const handleDelete = async (id: number | undefined) => {
     if (typeof id !== 'number') return;
-    await fetch(`/api/id-card-template?id=${id}`, { method: 'DELETE' });
+    await fetch(`${BASE_URL}/api/id-card-template?id=${id}`, { method: 'DELETE' });
     fetchTemplates();
   };
 
@@ -225,7 +227,7 @@ export default function SettingsPage() {
       formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value ?? ''));
     });
     if (file) formData.append('templateFile', file);
-    await fetch('/api/id-card-template', {
+    await fetch(`${BASE_URL}/api/id-card-template`, {
       method: 'POST',
       body: formData,
     });
@@ -238,12 +240,13 @@ export default function SettingsPage() {
   const handleEditSubmit = async () => {
     if (!editTemplate) return;
     const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
-      formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value ?? ''));
-    });
+    // Object.entries(form).forEach(([key, value]) => {
+    //   formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value ?? ''));
+    // });
+    formData.append('templateData', JSON.stringify(form));
     if (file) formData.append('templateFile', file);
-    await fetch(`/api/id-card-template?id=${editTemplate.id}`, {
-      method: 'PATCH',
+    await fetch(`${BASE_URL}/api/id-card-template?id=${editTemplate.id}`, {
+      method: 'PUT',
       body: formData,
     });
     setShowEditModal(false);
