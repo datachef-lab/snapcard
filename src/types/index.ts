@@ -28,6 +28,7 @@ export interface Student {
     sessionName: string | null;
 
     academicYear: string;
+    active: boolean;
 }
 
 export interface IdCardIssue {

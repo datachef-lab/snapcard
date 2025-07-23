@@ -483,7 +483,7 @@ export default function Page() {
         Enter the UID
       </h2>
 
-
+    {/* active: {JSON.stringify(userDetails?.active)} */}
 
       <Input
         placeholder="Enter student UID or code number"
@@ -505,463 +505,471 @@ export default function Page() {
             Student not found.
           </div>
         )}
-        {userDetails && !loading && !notFound && <div className="">
-          <div className="">
-            <div className="flex gap-4">
-              {/* Left: Editable Form */}
-              <div className="w-[66%]">
-                <Card className="p-6 bg-blue-50 rounded-xl shadow-md flex flex-col justify-center h-full">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 justify-between">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={`${process.env.NEXT_PUBLIC_STUDENT_PROFILE_URL}/Student_Image_${userDetails.codeNumber}.jpg`} alt={userDetails.name} />
-                          <AvatarFallback>{ }</AvatarFallback>
-                        </Avatar>
-                        {/* <span className="truncate" title={userDetails.name}>{userDetails.name}</span> */}
-                      </div>
-                      <span className="flex items-center gap-2"><User className="w-5 h-5" />Personal Details</span>
-                      <div>
-                        <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
-                          History
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
-                    <SheetContent side="right">
-                      <SheetHeader>
-                        <SheetTitle>ID Card Issue History</SheetTitle>
-                      </SheetHeader>
-                      <div className="mt-4 max-h-[70vh] overflow-y-auto">
-                        {idCardIssues.length === 0 ? (
-                          <div className="text-gray-500 p-2">No ID card issue history.</div>
-                        ) : (
-                          <ul className="space-y-3 p-3">
-                            {idCardIssues.map((issue, idx) => (
-                              <li key={issue.id || idx} className="bg-white rounded-md border p-3 flex flex-col gap-1 shadow-sm">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-semibold text-base">#{idCardIssues.length - idx} Type: {issue.issue_status}</span>
-                                  <div className="flex gap-1">
-                                    <Button size="sm" variant="outline" className="px-2 py-1 text-xs h-7" onClick={() => {
-                                      setViewCardIssueId(issue.id ?? null);
-                                      setViewDialogOpen(true);
-                                    }}>
-                                      View
-                                    </Button>
-                                    <Button size="sm" variant="destructive" className="px-2 py-1 text-xs h-7 rounded-full" onClick={() => {
-                                      setDeleteIssueId(issue.id ?? null);
-                                      setDeleteConfirmOpen(true);
-                                    }}>
-                                      <span className="font-semibold">✕</span>
-                                    </Button>
-                                  </div>
-                                </div>
-                                <div className="text-xs text-gray-700">Remarks: {issue.remarks}</div>
-                                <div className="text-xs text-gray-400">Date: {issue.issue_date ? String(issue.issue_date) : ''}</div>
-                              </li>
-                            ))}
+        {userDetails && !loading && !notFound && (
+          userDetails.active === false ? (
+            <div className="flex justify-center items-center h-32 text-xl text-red-500">
+              Student is not active
+            </div>
+          ) : (
+            <div className="">
+              <div className="">
+                <div className="flex gap-4">
+                  {/* Left: Editable Form */}
+                  <div className="w-[66%]">
+                    <Card className="p-6 bg-blue-50 rounded-xl shadow-md flex flex-col justify-center h-full">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 justify-between">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={`${process.env.NEXT_PUBLIC_STUDENT_PROFILE_URL}/Student_Image_${userDetails.codeNumber}.jpg`} alt={userDetails.name} />
+                              <AvatarFallback>{ }</AvatarFallback>
+                            </Avatar>
+                            {/* <span className="truncate" title={userDetails.name}>{userDetails.name}</span> */}
+                          </div>
+                          <span className="flex items-center gap-2"><User className="w-5 h-5" />Personal Details</span>
+                          <div>
+                            <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
+                              History
+                            </Button>
+                          </div>
+                        </CardTitle>
+                      </CardHeader>
+                      <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+                        <SheetContent side="right">
+                          <SheetHeader>
+                            <SheetTitle>ID Card Issue History</SheetTitle>
+                          </SheetHeader>
+                          <div className="mt-4 max-h-[70vh] overflow-y-auto">
+                            {idCardIssues.length === 0 ? (
+                              <div className="text-gray-500 p-2">No ID card issue history.</div>
+                            ) : (
+                              <ul className="space-y-3 p-3">
+                                {idCardIssues.map((issue, idx) => (
+                                  <li key={issue.id || idx} className="bg-white rounded-md border p-3 flex flex-col gap-1 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-semibold text-base">#{idCardIssues.length - idx} Type: {issue.issue_status}</span>
+                                      <div className="flex gap-1">
+                                        <Button size="sm" variant="outline" className="px-2 py-1 text-xs h-7" onClick={() => {
+                                          setViewCardIssueId(issue.id ?? null);
+                                          setViewDialogOpen(true);
+                                        }}>
+                                          View
+                                        </Button>
+                                        <Button size="sm" variant="destructive" className="px-2 py-1 text-xs h-7 rounded-full" onClick={() => {
+                                          setDeleteIssueId(issue.id ?? null);
+                                          setDeleteConfirmOpen(true);
+                                        }}>
+                                          <span className="font-semibold">✕</span>
+                                        </Button>
+                                      </div>
+                                    </div>
+                                    <div className="text-xs text-gray-700">Remarks: {issue.remarks}</div>
+                                    <div className="text-xs text-gray-400">Date: {issue.issue_date ? String(issue.issue_date) : ''}</div>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        </SheetContent>
+                      </Sheet>
+                      {/* View Old ID Card Dialog */}
+                      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+                        <DialogContent className="h-[95vh] overflow-auto pt-10 flex flex-col items-center">
+                          <DialogTitle className="mb-4">Old ID Card Preview</DialogTitle>
+                          {viewCardIssueId && (
+                            <>
+                              <NextImage
+                                src={`${BASE_PATH}/api/students/fetch-image?id_card_issue_id=${viewCardIssueId}`}
+                                alt="Old ID Card"
+                                width={400}
+                                height={300}
+                                className="w-full h-auto object-contain rounded-lg border mb-4"
+                              />
+                              <Button
+                                className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white mt-2"
+                                onClick={() => {
+                                  const url = `${BASE_PATH}/api/students/fetch-image?id_card_issue_id=${viewCardIssueId}`;
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  link.download = `id_card_${viewCardIssueId}.png`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                              >
+                                Download ID Card
+                              </Button>
+                            </>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                      <CardContent>
+                        <div className="mb-4 p-3 rounded bg-blue-100 text-sm">
+
+                          <div><b>Session:</b> {userDetails.sessionName || "-"}</div>
+                          <div><b>Section:</b> {userDetails.sectionName || "-"}</div>
+                          <div><b>Shift:</b> {userDetails.shiftName || "-"}</div>
+                          <div className="mt-2"><b>Emergency Numbers:</b></div>
+                          <ul className="ml-4 list-disc">
+                            <li>Self: {userDetails.emrgnResidentPhNo || "-"}</li>
+                            <li>Father: {userDetails.emrgnFatherMobno || "-"}</li>
+                            <li>Mother: {userDetails.emrgnMotherMobNo || "-"}</li>
                           </ul>
-                        )}
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                  {/* View Old ID Card Dialog */}
-                  <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-                    <DialogContent className="h-[95vh] overflow-auto pt-10 flex flex-col items-center">
-                      <DialogTitle className="mb-4">Old ID Card Preview</DialogTitle>
-                      {viewCardIssueId && (
-                        <>
-                          <NextImage
-                            src={`${BASE_PATH}/api/students/fetch-image?id_card_issue_id=${viewCardIssueId}`}
-                            alt="Old ID Card"
-                            width={400}
-                            height={300}
-                            className="w-full h-auto object-contain rounded-lg border mb-4"
-                          />
+                        </div>
+                        <div className="grid grid-cols-1  gap-4">
+                          <div className="flex items-center">
+                            <span className="w-48 font-semibold text-right mr-4">Full Name</span>
+                            <div className="flex flex-1 items-center gap-1">
+                              <Input
+                                id="name"
+                                value={userDetails.name}
+                                onChange={(e) => handleInputChange("name", e.target.value)}
+                                placeholder="Enter your full name"
+                                className="min-w-[180px] flex-1"
+                              />
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, x: p.nameCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, x: p.nameCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, y: p.nameCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, y: p.nameCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-48 font-semibold text-right mr-4">Course</span>
+                            <div className="flex flex-1 items-center gap-1">
+                              <Input
+                                id="course"
+                                value={userDetails.courseName || ""}
+                                onChange={(e) => handleInputChange("courseName", e.target.value)}
+                                placeholder="Enter your course"
+                                className="min-w-[180px] flex-1"
+                              />
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, x: p.courseCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, x: p.courseCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, y: p.courseCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, y: p.courseCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-48 font-semibold text-right mr-4">UID</span>
+                            <div className="flex flex-1 items-center gap-1">
+                              <Input
+                                id="uid"
+                                value={userDetails.codeNumber || ""}
+                                onChange={(e) => handleInputChange("codeNumber", e.target.value)}
+                                placeholder="Enter your UID"
+                                className="min-w-[180px] flex-1"
+                              />
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, x: p.uidCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, x: p.uidCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, y: p.uidCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, y: p.uidCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-48 font-semibold text-right mr-4">Mobile Number</span>
+                            <div className="flex flex-1 items-center gap-1">
+                              <Input
+                                id="mobile"
+                                value={userDetails.emrgnResidentPhNo || ""}
+                                onChange={(e) => handleInputChange("emrgnResidentPhNo", e.target.value)}
+                                placeholder="Enter your mobile number"
+                                className="min-w-[180px] flex-1"
+                              />
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, x: p.mobileCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, x: p.mobileCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, y: p.mobileCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, y: p.mobileCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-48 font-semibold text-right mr-4">Blood Group</span>
+                            <div className="flex flex-1 items-center gap-1">
+                              <Input
+                                id="bloodGroup"
+                                value={userDetails.bloodGroupName || ""}
+                                onChange={(e) => handleInputChange("bloodGroupName", e.target.value)}
+                                placeholder="Enter your blood group"
+                                className="min-w-[180px] flex-1"
+                              />
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, x: p.bloodGroupCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, x: p.bloodGroupCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, y: p.bloodGroupCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, y: p.bloodGroupCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-48 font-semibold text-right mr-4">Sports Quota</span>
+                            <div className="flex flex-1 items-center gap-1">
+                              <Input
+                                id="securityQ"
+                                value={userDetails.securityQ || ""}
+                                onChange={(e) => handleInputChange("securityQ", e.target.value)}
+                                placeholder=""
+                                className="min-w-[180px] flex-1"
+                              />
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, x: p.sportsQuotaCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, x: p.sportsQuotaCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, y: p.sportsQuotaCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, y: p.sportsQuotaCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-48 font-semibold text-right mr-4">Valid Till Date</span>
+                            <div className="flex flex-1 items-center gap-1">
+                              <Input
+                                id="validTillDate"
+                                value={validTillDate}
+                                onChange={e => {
+                                  // Allow only digits and dashes, and auto-insert dashes
+                                  let v = e.target.value.replace(/[^0-9-]/g, "");
+                                  if (v.length === 2 || v.length === 5) {
+                                    if (validTillDate.length < v.length) v += "-";
+                                  }
+                                  setValidTillDate(v.slice(0, 10));
+                                }}
+                                placeholder="dd-mm-yyyy"
+                                pattern="^\d{2}-\d{2}-\d{4}$"
+                                className="min-w-[180px] flex-1"
+                                inputMode="numeric"
+                                maxLength={10}
+                              />
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, x: p.validTillDateCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, x: p.validTillDateCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, y: p.validTillDateCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, y: p.validTillDateCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-48 font-semibold text-right mr-4">QR Code</span>
+                            <div className="flex flex-1 items-center gap-1">
+                              <span className="text-xs text-gray-500">X:</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, x: p.qrcodeCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, x: p.qrcodeCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
+                              <span className="text-xs text-gray-500 ml-2">Y:</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, y: p.qrcodeCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, y: p.qrcodeCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                              <span className="text-xs text-gray-500 ml-2">Size:</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(prev => ({...prev, qrcodeSize: Math.max(20, prev.qrcodeSize - 5)}))}>-</Button>
+                              <span className="px-2">{positions.qrcodeSize}</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(prev => ({...prev, qrcodeSize: Math.min(300, prev.qrcodeSize + 5)}))}>+</Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center">
+                            <span className="w-48 font-semibold text-right mr-4">Photo</span>
+                            <div className="flex flex-1 items-center gap-1">
+                              <span className="text-xs text-gray-500">X:</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, x: r.photoDimension.x - 1} }))}><ChevronLeft className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, x: r.photoDimension.x + 1} }))}><ChevronRight className="w-4 h-4" /></Button>
+                              <span className="text-xs text-gray-500 ml-2">Y:</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, y: r.photoDimension.y - 1} }))}><ChevronUp className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, y: r.photoDimension.y + 1} }))}><ChevronDown className="w-4 h-4" /></Button>
+                              <span className="text-xs text-gray-500 ml-2">Width:</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension:{ ...r.photoDimension, width: Math.max(20, r.photoDimension.width - 5)} }))}>-</Button>
+                              <span className="px-2">{positions.photoDimension.width}</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, width: Math.min(400, r.photoDimension.width + 5)} }))}>+</Button>
+                              <span className="text-xs text-gray-500 ml-2">Height:</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, height: Math.max(20, r.photoDimension.height - 5)} }))}>-</Button>
+                              <span className="px-2">{positions.photoDimension.height}</span>
+                              <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, height: Math.min(600, r.photoDimension.height + 5)} }))}>+</Button>
+                            </div>
+                          </div>
+                        </div>
+
+                      </CardContent>
+                    </Card>
+                  </div>
+                  {/* Right: ID Card Preview */}
+                  <div className="w-[34%]">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <span>Generated ID Card</span>
                           <Button
-                            className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white mt-2"
-                            onClick={() => {
-                              const url = `${BASE_PATH}/api/students/fetch-image?id_card_issue_id=${viewCardIssueId}`;
-                              const link = document.createElement('a');
-                              link.href = url;
-                              link.download = `id_card_${viewCardIssueId}.png`;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                            }}
+                            className="ml-2 bg-gray-200 text-gray-800 hover:bg-gray-300 rounded-lg shadow-none"
+                            onClick={() => setShowBack((prev) => !prev)}
+                            size="sm"
+                            variant="outline"
                           >
-                            Download ID Card
+                            {showBack ? "Show Front" : "Show Back"}
                           </Button>
-                        </>
-                      )}
-                    </DialogContent>
-                  </Dialog>
-                  <CardContent>
-                    <div className="mb-4 p-3 rounded bg-blue-100 text-sm">
-
-                      <div><b>Session:</b> {userDetails.sessionName || "-"}</div>
-                      <div><b>Section:</b> {userDetails.sectionName || "-"}</div>
-                      <div><b>Shift:</b> {userDetails.shiftName || "-"}</div>
-                      <div className="mt-2"><b>Emergency Numbers:</b></div>
-                      <ul className="ml-4 list-disc">
-                        <li>Self: {userDetails.emrgnResidentPhNo || "-"}</li>
-                        <li>Father: {userDetails.emrgnFatherMobno || "-"}</li>
-                        <li>Mother: {userDetails.emrgnMotherMobNo || "-"}</li>
-                      </ul>
-                    </div>
-                    <div className="grid grid-cols-1  gap-4">
-                      <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">Full Name</span>
-                        <div className="flex flex-1 items-center gap-1">
-                          <Input
-                            id="name"
-                            value={userDetails.name}
-                            onChange={(e) => handleInputChange("name", e.target.value)}
-                            placeholder="Enter your full name"
-                            className="min-w-[180px] flex-1"
-                          />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, x: p.nameCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, x: p.nameCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, y: p.nameCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, y: p.nameCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">Course</span>
-                        <div className="flex flex-1 items-center gap-1">
-                          <Input
-                            id="course"
-                            value={userDetails.courseName || ""}
-                            onChange={(e) => handleInputChange("courseName", e.target.value)}
-                            placeholder="Enter your course"
-                            className="min-w-[180px] flex-1"
-                          />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, x: p.courseCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, x: p.courseCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, y: p.courseCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, y: p.courseCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">UID</span>
-                        <div className="flex flex-1 items-center gap-1">
-                          <Input
-                            id="uid"
-                            value={userDetails.codeNumber || ""}
-                            onChange={(e) => handleInputChange("codeNumber", e.target.value)}
-                            placeholder="Enter your UID"
-                            className="min-w-[180px] flex-1"
-                          />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, x: p.uidCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, x: p.uidCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, y: p.uidCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, y: p.uidCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">Mobile Number</span>
-                        <div className="flex flex-1 items-center gap-1">
-                          <Input
-                            id="mobile"
-                            value={userDetails.emrgnResidentPhNo || ""}
-                            onChange={(e) => handleInputChange("emrgnResidentPhNo", e.target.value)}
-                            placeholder="Enter your mobile number"
-                            className="min-w-[180px] flex-1"
-                          />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, x: p.mobileCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, x: p.mobileCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, y: p.mobileCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, y: p.mobileCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">Blood Group</span>
-                        <div className="flex flex-1 items-center gap-1">
-                          <Input
-                            id="bloodGroup"
-                            value={userDetails.bloodGroupName || ""}
-                            onChange={(e) => handleInputChange("bloodGroupName", e.target.value)}
-                            placeholder="Enter your blood group"
-                            className="min-w-[180px] flex-1"
-                          />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, x: p.bloodGroupCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, x: p.bloodGroupCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, y: p.bloodGroupCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, y: p.bloodGroupCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">Sports Quota</span>
-                        <div className="flex flex-1 items-center gap-1">
-                          <Input
-                            id="securityQ"
-                            value={userDetails.securityQ || ""}
-                            onChange={(e) => handleInputChange("securityQ", e.target.value)}
-                            placeholder=""
-                            className="min-w-[180px] flex-1"
-                          />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, x: p.sportsQuotaCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, x: p.sportsQuotaCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, y: p.sportsQuotaCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, y: p.sportsQuotaCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">Valid Till Date</span>
-                        <div className="flex flex-1 items-center gap-1">
-                          <Input
-                            id="validTillDate"
-                            value={validTillDate}
-                            onChange={e => {
-                              // Allow only digits and dashes, and auto-insert dashes
-                              let v = e.target.value.replace(/[^0-9-]/g, "");
-                              if (v.length === 2 || v.length === 5) {
-                                if (validTillDate.length < v.length) v += "-";
-                              }
-                              setValidTillDate(v.slice(0, 10));
-                            }}
-                            placeholder="dd-mm-yyyy"
-                            pattern="^\d{2}-\d{2}-\d{4}$"
-                            className="min-w-[180px] flex-1"
-                            inputMode="numeric"
-                            maxLength={10}
-                          />
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, x: p.validTillDateCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, x: p.validTillDateCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, y: p.validTillDateCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, y: p.validTillDateCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">QR Code</span>
-                        <div className="flex flex-1 items-center gap-1">
-                          <span className="text-xs text-gray-500">X:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, x: p.qrcodeCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, x: p.qrcodeCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <span className="text-xs text-gray-500 ml-2">Y:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, y: p.qrcodeCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, y: p.qrcodeCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
-                          <span className="text-xs text-gray-500 ml-2">Size:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(prev => ({...prev, qrcodeSize: Math.max(20, prev.qrcodeSize - 5)}))}>-</Button>
-                          <span className="px-2">{positions.qrcodeSize}</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(prev => ({...prev, qrcodeSize: Math.min(300, prev.qrcodeSize + 5)}))}>+</Button>
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="w-48 font-semibold text-right mr-4">Photo</span>
-                        <div className="flex flex-1 items-center gap-1">
-                          <span className="text-xs text-gray-500">X:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, x: r.photoDimension.x - 1} }))}><ChevronLeft className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, x: r.photoDimension.x + 1} }))}><ChevronRight className="w-4 h-4" /></Button>
-                          <span className="text-xs text-gray-500 ml-2">Y:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, y: r.photoDimension.y - 1} }))}><ChevronUp className="w-4 h-4" /></Button>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, y: r.photoDimension.y + 1} }))}><ChevronDown className="w-4 h-4" /></Button>
-                          <span className="text-xs text-gray-500 ml-2">Width:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension:{ ...r.photoDimension, width: Math.max(20, r.photoDimension.width - 5)} }))}>-</Button>
-                          <span className="px-2">{positions.photoDimension.width}</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, width: Math.min(400, r.photoDimension.width + 5)} }))}>+</Button>
-                          <span className="text-xs text-gray-500 ml-2">Height:</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, height: Math.max(20, r.photoDimension.height - 5)} }))}>-</Button>
-                          <span className="px-2">{positions.photoDimension.height}</span>
-                          <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, height: Math.min(600, r.photoDimension.height + 5)} }))}>+</Button>
-                        </div>
-                      </div>
-                    </div>
-
-                  </CardContent>
-                </Card>
-              </div>
-              {/* Right: ID Card Preview */}
-              <div className="w-[34%]">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>Generated ID Card</span>
-                      <Button
-                        className="ml-2 bg-gray-200 text-gray-800 hover:bg-gray-300 rounded-lg shadow-none"
-                        onClick={() => setShowBack((prev) => !prev)}
-                        size="sm"
-                        variant="outline"
-                      >
-                        {showBack ? "Show Front" : "Show Back"}
-                      </Button>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div
-                      className="w-full h-[380px] flex items-center justify-center bg-gray-100 rounded-lg cursor-zoom-in"
-                      onClick={() => {
-                        if (!showBack && generatedCard) { setZoomImg(generatedCard); setZoomOpen(true); }
-                        if (showBack) { setZoomImg(`${process.env.NEXT_PUBLIC_BASE_PATH}/id-card-template-backside.jpeg`); setZoomOpen(true); }
-                      }}
-                    >
-                      {!showBack ? (
-                        generatedCard ? (
-                          <NextImage
-                            src={generatedCard}
-                            alt="Generated ID Card"
-                            width={400}
-                            height={300}
-                            className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-                          />
-                        ) : (
-                          <p className="text-gray-500 text-center">Your ID card will appear here after generation</p>
-                        )
-                      ) : (
-                        <NextImage
-                          src={`${process.env.NEXT_PUBLIC_BASE_PATH}/id-card-template-backside.jpeg`}
-                          alt="ID Card Back"
-                          width={400}
-                          height={300}
-                          className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-                        />
-                      )}
-                    </div>
-                    <div className="mt-4 flex gap-2">
-                      <Button className="w-1/2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 shadow" onClick={() => setShowWebcam(true)} size="lg">
-                        {capturedImage ? "Change Photo" : "Capture Photo"}
-                      </Button>
-                      <Button
-                        onClick={downloadCard}
-                        className={`w-1/2 rounded-lg ${showBack || !generatedCard ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
-                        size="lg"
-                        disabled={showBack || !generatedCard}
-                      >
-                        {(!showBack && generatedCard) ? (
-                          <>
-                            <Download className="w-4 h-4 mr-2" />
-                            Download ID Card
-                          </>
-                        ) : (
-                          <span className="opacity-0">Download ID Card</span>
-                        )}
-                      </Button>
-                    </div>
-                    {/* New section for Type and Remarks */}
-                    <div className="mt-8 max-w-lg mx-auto bg-white rounded-xl shadow p-6">
-                      <div className="mb-4">
-                        <label className="block font-semibold mb-1">Type</label>
-                        <div className="flex gap-6">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id="issued"
-                              checked={issueType === "ISSUED"}
-                              onCheckedChange={() => setIssueType("ISSUED")}
-                              // Always enabled
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div
+                          className="w-full h-[380px] flex items-center justify-center bg-gray-100 rounded-lg cursor-zoom-in"
+                          onClick={() => {
+                            if (!showBack && generatedCard) { setZoomImg(generatedCard); setZoomOpen(true); }
+                            if (showBack) { setZoomImg(`${process.env.NEXT_PUBLIC_BASE_PATH}/id-card-template-backside.jpeg`); setZoomOpen(true); }
+                          }}
+                        >
+                          {!showBack ? (
+                            generatedCard ? (
+                              <NextImage
+                                src={generatedCard}
+                                alt="Generated ID Card"
+                                width={400}
+                                height={300}
+                                className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                              />
+                            ) : (
+                              <p className="text-gray-500 text-center">Your ID card will appear here after generation</p>
+                            )
+                          ) : (
+                            <NextImage
+                              src={`${process.env.NEXT_PUBLIC_BASE_PATH}/id-card-template-backside.jpeg`}
+                              alt="ID Card Back"
+                              width={400}
+                              height={300}
+                              className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
                             />
-                            <label htmlFor="issued" className="text-sm font-medium">ISSUED</label>
+                          )}
+                        </div>
+                        <div className="mt-4 flex gap-2">
+                          <Button className="w-1/2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 shadow" onClick={() => setShowWebcam(true)} size="lg">
+                            {capturedImage ? "Change Photo" : "Capture Photo"}
+                          </Button>
+                          <Button
+                            onClick={downloadCard}
+                            className={`w-1/2 rounded-lg ${showBack || !generatedCard ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+                            size="lg"
+                            disabled={showBack || !generatedCard}
+                          >
+                            {(!showBack && generatedCard) ? (
+                              <>
+                                <Download className="w-4 h-4 mr-2" />
+                                Download ID Card
+                              </>
+                            ) : (
+                              <span className="opacity-0">Download ID Card</span>
+                            )}
+                          </Button>
+                        </div>
+                        {/* New section for Type and Remarks */}
+                        <div className="mt-8 max-w-lg mx-auto bg-white rounded-xl shadow p-6">
+                          <div className="mb-4">
+                            <label className="block font-semibold mb-1">Type</label>
+                            <div className="flex gap-6">
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  id="issued"
+                                  checked={issueType === "ISSUED"}
+                                  onCheckedChange={() => setIssueType("ISSUED")}
+                                  // Always enabled
+                                />
+                                <label htmlFor="issued" className="text-sm font-medium">ISSUED</label>
+                              </div>
+                              <div className="flex items-center space-x-2" title={idCardIssues.length === 0 ? "You must issue the first card before you can renew." : ""}>
+                                <Checkbox
+                                  id="renewed"
+                                  checked={issueType === "RENEWED"}
+                                  onCheckedChange={() => setIssueType("RENEWED")}
+                                  disabled={idCardIssues.length === 0}
+                                />
+                                <label htmlFor="renewed" className="text-sm font-medium">RENEWED</label>
+                              </div>
+                              <div className="flex items-center space-x-2" title={idCardIssues.length === 0 ? "You must issue the first card before you can reissue." : ""}>
+                                <Checkbox
+                                  id="reissued"
+                                  checked={issueType === "REISSUED"}
+                                  onCheckedChange={() => setIssueType("REISSUED")}
+                                  disabled={idCardIssues.length === 0}
+                                />
+                                <label htmlFor="reissued" className="text-sm font-medium">REISSUED</label>
+                              </div>
+                            </div>
+                            {idCardIssues.length === 0 && (
+                              <div className="text-xs text-gray-500 mt-1">You must issue the first card before you can renew or reissue.</div>
+                            )}
                           </div>
-                          <div className="flex items-center space-x-2" title={idCardIssues.length === 0 ? "You must issue the first card before you can renew." : ""}>
-                            <Checkbox
-                              id="renewed"
-                              checked={issueType === "RENEWED"}
-                              onCheckedChange={() => setIssueType("RENEWED")}
-                              disabled={idCardIssues.length === 0}
+                          <div>
+                            <label className="block font-semibold mb-1">Remarks</label>
+                            <Textarea
+                              value={remarks}
+                              onChange={e => setRemarks(e.target.value)}
+                              placeholder="Enter remarks"
                             />
-                            <label htmlFor="renewed" className="text-sm font-medium">RENEWED</label>
-                          </div>
-                          <div className="flex items-center space-x-2" title={idCardIssues.length === 0 ? "You must issue the first card before you can reissue." : ""}>
-                            <Checkbox
-                              id="reissued"
-                              checked={issueType === "REISSUED"}
-                              onCheckedChange={() => setIssueType("REISSUED")}
-                              disabled={idCardIssues.length === 0}
-                            />
-                            <label htmlFor="reissued" className="text-sm font-medium">REISSUED</label>
                           </div>
                         </div>
-                        {idCardIssues.length === 0 && (
-                          <div className="text-xs text-gray-500 mt-1">You must issue the first card before you can renew or reissue.</div>
-                        )}
-                      </div>
-                      <div>
-                        <label className="block font-semibold mb-1">Remarks</label>
-                        <Textarea
-                          value={remarks}
-                          onChange={e => setRemarks(e.target.value)}
-                          placeholder="Enter remarks"
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 mt-6">
-              <Button
-                className="w-full rounded-lg bg-green-500 hover:bg-green-600 shadow text-white"
-                onClick={handleSaveImage}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 mt-6">
+                  <Button
+                    className="w-full rounded-lg bg-green-500 hover:bg-green-600 shadow text-white"
+                    onClick={handleSaveImage}
 
-                size="lg"
-                disabled={!generatedCard || !userDetails.codeNumber || saving}
-              >
-                {saving ? "Saving..." : "Save Photo"}
-              </Button>
-              {saveStatus === "success" && (
-                <p className="text-green-600 text-center mt-2">Photo saved successfully!</p>
-              )}
-              {saveStatus === "error" && (
-                <p className="text-red-600 text-center mt-2">Failed to save photo. Try again.</p>
-              )}
-            </div>
-            {/* Webcam Modal */}
-            <Dialog open={showWebcam} onOpenChange={setShowWebcam}>
-              <DialogContent>
-                <div className="space-y-4">
-                  <Webcam
-                    ref={webcamRef}
-                    audio={false}
-                    screenshotFormat="image/jpeg"
-                    className="w-full"
-                    videoConstraints={{
-                      width: 640,
-                      height: 480,
-                      facingMode: "user",
-                    }}
-                  />
-                  <Button onClick={capture} className="w-full bg-blue-600 hover:bg-blue-700 text-white" size="lg">
-                    <Camera className="w-4 h-4 mr-2" />
-                    Capture Photo
+                    size="lg"
+                    disabled={!generatedCard || !userDetails.codeNumber || saving}
+                  >
+                    {saving ? "Saving..." : "Save Photo"}
                   </Button>
+                  {saveStatus === "success" && (
+                    <p className="text-green-600 text-center mt-2">Photo saved successfully!</p>
+                  )}
+                  {saveStatus === "error" && (
+                    <p className="text-red-600 text-center mt-2">Failed to save photo. Try again.</p>
+                  )}
                 </div>
-              </DialogContent>
-            </Dialog>
-            {/* Canvas for Image Processing - hidden */}
-            <div style={{ display: "none" }}>
-              <canvas ref={canvasRef} />
+                {/* Webcam Modal */}
+                <Dialog open={showWebcam} onOpenChange={setShowWebcam}>
+                  <DialogContent>
+                    <div className="space-y-4">
+                      <Webcam
+                        ref={webcamRef}
+                        audio={false}
+                        screenshotFormat="image/jpeg"
+                        className="w-full"
+                        videoConstraints={{
+                          width: 640,
+                          height: 480,
+                          facingMode: "user",
+                        }}
+                      />
+                      <Button onClick={capture} className="w-full bg-blue-600 hover:bg-blue-700 text-white" size="lg">
+                        <Camera className="w-4 h-4 mr-2" />
+                        Capture Photo
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                {/* Canvas for Image Processing - hidden */}
+                <div style={{ display: "none" }}>
+                  <canvas ref={canvasRef} />
+                </div>
+                {/* Zoom Modal */}
+                <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
+                  <DialogContent className="h-[95vh] overflow-auto pt-10">
+                    <DialogTitle className="sr-only">Zoomed ID Card Preview</DialogTitle>
+                    {zoomImg && (
+                      <NextImage src={zoomImg} alt="Zoomed ID Card" width={800} height={600} className="w-full h-auto object-contain rounded-lg border" />
+                    )}
+                  </DialogContent>
+                </Dialog>
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                  <DialogContent className="max-w-sm mx-auto">
+                    <DialogTitle>Delete ID Card Issue</DialogTitle>
+                    <div className="py-4">Are you sure you want to delete this ID card issue? This action cannot be undone.</div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+                      <Button variant="destructive" onClick={async () => {
+                        if (!deleteIssueId || !userDetails?.id) { setDeleteConfirmOpen(false); return; }
+                        await fetch(`${BASE_PATH}/api/id-card-issue/${deleteIssueId}`, { method: "DELETE" });
+                        setDeleteConfirmOpen(false);
+                        setDeleteIssueId(null);
+                        // Always refresh issues after delete
+                        fetch(`${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id}`)
+                          .then(res => res.json())
+                          .then(data => setIdCardIssues(data.data || []));
+                      }}>Delete</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-            {/* Zoom Modal */}
-            <Dialog open={zoomOpen} onOpenChange={setZoomOpen}>
-              <DialogContent className="h-[95vh] overflow-auto pt-10">
-                <DialogTitle className="sr-only">Zoomed ID Card Preview</DialogTitle>
-                {zoomImg && (
-                  <NextImage src={zoomImg} alt="Zoomed ID Card" width={800} height={600} className="w-full h-auto object-contain rounded-lg border" />
-                )}
-              </DialogContent>
-            </Dialog>
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-              <DialogContent className="max-w-sm mx-auto">
-                <DialogTitle>Delete ID Card Issue</DialogTitle>
-                <div className="py-4">Are you sure you want to delete this ID card issue? This action cannot be undone.</div>
-                <div className="flex justify-end gap-2 mt-4">
-                  <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-                  <Button variant="destructive" onClick={async () => {
-                    if (!deleteIssueId || !userDetails?.id) { setDeleteConfirmOpen(false); return; }
-                    await fetch(`${BASE_PATH}/api/id-card-issue/${deleteIssueId}`, { method: "DELETE" });
-                    setDeleteConfirmOpen(false);
-                    setDeleteIssueId(null);
-                    // Always refresh issues after delete
-                    fetch(`${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id}`)
-                      .then(res => res.json())
-                      .then(data => setIdCardIssues(data.data || []));
-                  }}>Delete</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>}
+          )
+        )}
       </div>
 
     </div>

@@ -19,6 +19,7 @@ const dbConfig = {
   keepAliveInitialDelay: 10000,
   connectTimeout: 10000,
   timezone: 'Z',
+  
 };
 
 // Add type-safe global variables to prevent re-creating pool/db in dev (Next.js hot reload)
