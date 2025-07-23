@@ -224,10 +224,13 @@ useEffect(() => {
     setDates(formattedDates);
     // Only set the most recent date if none is selected or the current date is not in the list
     if (!date || !formattedDates.includes(date)) {
-      setDate(formattedDates[formattedDates.length - 1]);
+      const newDate = formattedDates[formattedDates.length - 1];
+      if (date !== newDate) {
+        setDate(newDate);
+      }
     }
   });
-}, [admissionYear, date, setAdmissionYear, setDate]);
+}, [admissionYear]);
 
 
   // Subscribe to Pusher for real-time stats updates

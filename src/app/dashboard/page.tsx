@@ -698,7 +698,7 @@ export default function Page() {
                             id="securityQ"
                             value={userDetails.securityQ || ""}
                             onChange={(e) => handleInputChange("securityQ", e.target.value)}
-                            placeholder="Enter your security question"
+                            placeholder=""
                             className="min-w-[180px] flex-1"
                           />
                           <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, x: p.sportsQuotaCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>

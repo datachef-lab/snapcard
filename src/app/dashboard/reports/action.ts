@@ -90,8 +90,10 @@ export async function downloadIdCardDetails(date: string, hour: number): Promise
       i.name,
       i.phone_mobile_no,
       i.blood_group_name,
-      i.course_name
+      i.course_name,
+      s.codeNumber
     FROM id_card_issues i
+    JOIN studentpersonaldetails s ON s.id = i.student_id_fk
     WHERE 
       i.issue_date = ?
       AND HOUR(CONVERT_TZ(i.created_at, '+00:00', '+05:30')) = ?
@@ -104,7 +106,7 @@ export async function downloadIdCardDetails(date: string, hour: number): Promise
 
   // ✅ Corrected header
   sheet.addRow([
-    'ID', 'Name', 'Phone', 'Blood Group', 'Course',
+    'ID', 'Name', 'Phone', 'Blood Group', 'Course', 'UID',
     'Expiry Date', 'Status', 'Remarks', 'Created At'
   ]);
 
@@ -115,6 +117,7 @@ export async function downloadIdCardDetails(date: string, hour: number): Promise
       row.phone_mobile_no,
       row.blood_group_name,
       row.course_name,
+      row.codeNumber,
       row.expiry_date ? formatDate(new Date(row.expiry_date), 'dd-MM-yyyy') : '',
       row.issue_status,
       row.remarks,
