@@ -63,23 +63,23 @@ function TemplateModal({
   onOpenChange,
   mode,
   form,
-  file,
+  // file,
   previewUrl,
   academicYears,
   handleFormChange,
   handleFileChange,
   handleSubmit,
   disableAdmissionYear = false,
-  initialPreviewUrl = null,
+  // initialPreviewUrl = null,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: 'add' | 'edit';
-  form: any;
+  form: Partial<IdCardTemplate>;
   file: File | null;
   previewUrl: string | null;
   academicYears: string[];
-  handleFormChange: (field: keyof import('@/lib/db/schema').IdCardTemplate | string, value: any) => void;
+  handleFormChange: (field: keyof IdCardTemplate, value: string | number | boolean | object | null) => void;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleSubmit: () => void;
   disableAdmissionYear?: boolean;
@@ -134,10 +134,8 @@ function TemplateModal({
             <div className="flex flex-col items-center w-[260px] flex-shrink-0">
               <label className="text-xs font-semibold mb-2">Template Image</label>
               <input type="file" accept="image/*" onChange={handleFileChange} className="mb-2" />
-              {previewUrl ? (
-                <img src={previewUrl} alt="Preview" className="w-56 h-64 object-contain rounded border" />
-              ) : (
-                <div className="w-56 h-64 flex items-center justify-center bg-gray-100 text-gray-400 rounded border">No Image</div>
+              {previewUrl && (
+                <Image src={previewUrl} alt="Preview" width={400} height={250} className="w-full h-auto" />
               )}
             </div>
           </div>
@@ -209,7 +207,7 @@ export default function SettingsPage() {
     fetchTemplates();
   };
 
-  const handleFormChange = (field: string, value: any) => {
+  const handleFormChange = (field: keyof IdCardTemplate, value: string | number | boolean | object | null) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 

@@ -73,12 +73,18 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     try {
       await fs.unlink(imagePath);
     } catch (e) {
+      console.error('[DELETE] Error deleting image file:', e);
       // Ignore if file does not exist
     }
     // Robustly fetch admissionYear if not present
-    let admissionYear = (issue as any).admissionYear;
+    let admissionYear: string | undefined = undefined;
+    if (issue && typeof issue === 'object' && 'admissionYear' in issue) {
+      const ay = (issue as { admissionYear?: string | null }).admissionYear;
+      if (typeof ay === 'string') admissionYear = ay;
+    }
     if (!admissionYear && issue && issue.student_id_fk) {
-      admissionYear = await getAdmissionYearForStudent(issue.student_id_fk);
+      const ay = await getAdmissionYearForStudent(issue.student_id_fk);
+      if (typeof ay === 'string') admissionYear = ay;
     }
     // Emit stats-update event after delete
     if (issue && admissionYear && issue.issue_date) {

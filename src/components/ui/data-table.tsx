@@ -50,8 +50,8 @@ export function DataTable<TData, TValue>({
   pageCount,
   onPageChange,
   onPageSizeChange,
-  search,
-  onSearchChange,
+  // search,
+  // onSearchChange,
   loading,
   error,
 }: DataTableProps<TData, TValue>) {

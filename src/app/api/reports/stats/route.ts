@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getStats, getHourlyStats, getAdmissionYears } from '@/lib/services/reports.service';
+import { getStats, getAdmissionYears } from '@/lib/services/reports.service';
 import { fetchIdCardStatsPerHour } from '@/app/dashboard/reports/action';
 
 function toDDMMYYYY(dateStr: string) {

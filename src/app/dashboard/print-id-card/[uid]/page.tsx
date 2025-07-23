@@ -11,7 +11,7 @@ import { useParams } from "next/navigation"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Student } from "@/types"
-
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export default function WebcamIDGenerator() {
   const webcamRef = useRef<Webcam>(null)
@@ -43,7 +43,7 @@ export default function WebcamIDGenerator() {
         return;
       }
       try {
-        const res = await fetch(`/api/students?uid=${uidParam}`);
+        const res = await fetch(`${BASE_PATH}/api/students?uid=${uidParam}`);
         const data = await res.json();
         if (data.content && data.content.length > 0) {
           setUserDetails(data.content[0]);
@@ -244,7 +244,7 @@ export default function WebcamIDGenerator() {
       const formData = new FormData();
       formData.append("file", blob, `${userDetails?.codeNumber}.png`);
       formData.append("uid", userDetails?.codeNumber);
-      const res = await fetch("/api/students/upload-image", {
+      const res = await fetch(`${BASE_PATH}/api/students/upload-image`, {
         method: "POST",
         body: formData,
       });
@@ -261,7 +261,7 @@ export default function WebcamIDGenerator() {
 
   useEffect(() => {
     if (!userDetails?.codeNumber) return;
-    const imgUrl = `/api/students/fetch-image?uid=${userDetails?.codeNumber}`;
+    const imgUrl = `${BASE_PATH}/api/students/fetch-image?uid=${userDetails?.codeNumber}`;
     fetch(imgUrl, { method: "HEAD" }).then(res => {
       if (res.ok) setCapturedImage(imgUrl);
     });

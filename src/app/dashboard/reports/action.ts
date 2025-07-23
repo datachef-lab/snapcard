@@ -1,5 +1,5 @@
 "use server"
-import { dbPostgres, query } from "@/lib/db";
+import { query } from "@/lib/db";
 import { Buffer } from 'node:buffer';
 
 import { getAdmissionYears } from "@/lib/services/reports.service";
@@ -68,7 +68,7 @@ import ExcelJS from 'exceljs';
  * Generate Excel for ID cards issued at a specific date + hour
  * Only includes entries where issue_status = 'ISSUED'
  */
-import { format as formatDate, parseISO } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 
 export async function downloadIdCardDetails(date: string, hour: number): Promise<ArrayBuffer | Uint8Array> {
   console.log('fired download');

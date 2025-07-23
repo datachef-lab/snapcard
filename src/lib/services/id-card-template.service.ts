@@ -35,6 +35,8 @@ export async function updateIdCardTemplate(givenTemplate: IdCardTemplate, templa
     try {
       console.log("givenTemplate:", givenTemplate);
       const { id, createdAt, updatedAt, ...rest } = givenTemplate;
+      console.log("createdAt:", createdAt);
+      console.log("updatedAt:", updatedAt, id);
       const [updated] = await dbPostgres.update(idCardTemplateTable).set(rest).where(eq(idCardTemplateTable.id, id!)).returning();
       if (updated && templateFile) {
         await saveTemplateFile(updated.id, templateFile);

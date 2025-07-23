@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Checkbox } from "@/components/ui/checkbox";
 import { IdCardTemplate } from "@/lib/db/schema";
 import { useAuth } from "@/hooks/use-auth";
+import NextImage from 'next/image';
 
 
 export default function Page() {
@@ -63,9 +64,9 @@ export default function Page() {
   const [deleteIssueId, setDeleteIssueId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState<IdCardTemplate[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<IdCardTemplate | null>(null);
+  const setSelectedTemplate = useState<IdCardTemplate | null>(null)[1];
   const [notFound, setNotFound] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const setFile = useState<File | null>(null)[1];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Update remarks when issueType changes
@@ -82,7 +83,7 @@ export default function Page() {
     } else if (idCardIssues.length > 0 && issueType === "ISSUED") {
       setIssueType("RENEWED");
     }
-  }, [idCardIssues.length]);
+  }, [idCardIssues.length, issueType]);
 
   const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -97,7 +98,7 @@ export default function Page() {
         setFile(null);
       }
     }
-  }, [userDetails, templates]);
+  }, [userDetails, templates, BASE_PATH, setSelectedTemplate, setPositions, setPreviewUrl, setFile]);
 
   useEffect(() => {
     const fetchStudent = async () => {
@@ -119,7 +120,7 @@ export default function Page() {
           // Fetch template for this student's admission year
           const admissionYear = data.content[0].academicYear;
           if (admissionYear) {
-            const templateRes = await fetch(`/api/id-card-template?admissionYear=${admissionYear}`);
+            const templateRes = await fetch(`${BASE_PATH}/api/id-card-template?admissionYear=${admissionYear}`);
             if (templateRes.ok) {
               const template = await templateRes.json();
               if (template) {
@@ -152,21 +153,21 @@ export default function Page() {
       }
     };
     fetchStudent();
-  }, [value]);
+  }, [value, BASE_PATH]);
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = useCallback(async () => {
     const res = await fetch(`${BASE_PATH}/api/id-card-template`);
     if (res.ok) {
       const data = await res.json();
       console.log(data)
       setTemplates(Array.isArray(data.data) ? data.data : []);
     }
-  };
+  }, [BASE_PATH]);
 
   useEffect(() => {
     if (templates.length > 0) return;
     fetchTemplates();
-  }, [templates])
+  }, [templates, fetchTemplates]);
   
 
 
@@ -190,7 +191,7 @@ export default function Page() {
     canvas.height = 900
 
     // Load the clean template image
-    const templateImg = new Image()
+    const templateImg = typeof window !== 'undefined' ? new window.Image() : new Image();
     templateImg.crossOrigin = "anonymous"
 
     templateImg.onload = async () => {
@@ -201,8 +202,7 @@ export default function Page() {
       ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height)
 
       // Load and draw the captured photo
-      const userImg = new Image()
-      userImg.crossOrigin = "anonymous"
+      const userImg = typeof window !== 'undefined' ? new window.Image() : new Image();
 
       userImg.onload = async () => {
         // Photo placement coordinates for the clean template
@@ -332,7 +332,7 @@ export default function Page() {
     // Use the clean template image
     // templateImg.src = `${process.env.NEXT_PUBLIC_BASE_PATH}/id-template-new-frontend.jpeg`
     templateImg.src = previewUrl;
-  }, [capturedImage, userDetails, positions, positions.qrcodeSize, validTillDate, positions.photoDimension])
+  }, [capturedImage, userDetails, positions, positions.qrcodeSize, validTillDate, positions.photoDimension, previewUrl]);
 
   useEffect(() => {
     if (capturedImage && userDetails && userDetails.name && userDetails.courseName) {
@@ -443,7 +443,7 @@ export default function Page() {
         else setIdCardIssues([]);
       })
       .catch(() => setIdCardIssues([]));
-  }, [userDetails?.id]);
+  }, [userDetails?.id, BASE_PATH, userDetails]);
 
   useEffect(() => {
     if (userDetails?.academicYear && !validTillDate) {
@@ -451,7 +451,7 @@ export default function Page() {
       setValidTillDate(`31-07-${year}`);
     }
     // Optionally, reset validTillDate if userDetails changes
-  }, [userDetails?.academicYear]);
+  }, [userDetails?.academicYear, validTillDate]);
 
 
   // Sync input value with current UID param
@@ -572,11 +572,12 @@ export default function Page() {
                       <DialogTitle className="mb-4">Old ID Card Preview</DialogTitle>
                       {viewCardIssueId && (
                         <>
-                          <img
+                          <NextImage
                             src={`${BASE_PATH}/api/students/fetch-image?id_card_issue_id=${viewCardIssueId}`}
                             alt="Old ID Card"
+                            width={400}
+                            height={300}
                             className="w-full h-auto object-contain rounded-lg border mb-4"
-                            style={{ maxWidth: 400 }}
                           />
                           <Button
                             className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white mt-2"
@@ -797,18 +798,22 @@ export default function Page() {
                     >
                       {!showBack ? (
                         generatedCard ? (
-                          <img
+                          <NextImage
                             src={generatedCard}
                             alt="Generated ID Card"
+                            width={400}
+                            height={300}
                             className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
                           />
                         ) : (
                           <p className="text-gray-500 text-center">Your ID card will appear here after generation</p>
                         )
                       ) : (
-                        <img
+                        <NextImage
                           src={`${process.env.NEXT_PUBLIC_BASE_PATH}/id-card-template-backside.jpeg`}
                           alt="ID Card Back"
+                          width={400}
+                          height={300}
                           className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
                         />
                       )}
@@ -931,7 +936,7 @@ export default function Page() {
               <DialogContent className="h-[95vh] overflow-auto pt-10">
                 <DialogTitle className="sr-only">Zoomed ID Card Preview</DialogTitle>
                 {zoomImg && (
-                  <img src={zoomImg} alt="Zoomed ID Card" className="w-full h-auto object-contain rounded-lg border" />
+                  <NextImage src={zoomImg} alt="Zoomed ID Card" width={800} height={600} className="w-full h-auto object-contain rounded-lg border" />
                 )}
               </DialogContent>
             </Dialog>

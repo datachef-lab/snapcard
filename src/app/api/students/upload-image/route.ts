@@ -14,10 +14,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "file and id_card_issue_id are required" }, { status: 400 });
     }
 
-    // @ts-expect-error file type mismatch
+    if (!(file instanceof Blob)) {
+      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+    }
     const arrayBuffer = await file.arrayBuffer();
-    // @ts-expect-error name may be undefined
-    const originalName = file.name || "image";
+    let originalName = "image";
+    if (
+      typeof file === "object" &&
+      "name" in file &&
+      typeof (file as { name?: unknown }).name === "string"
+    ) {
+      originalName = (file as { name: string }).name;
+    }
     const ext = path.extname(originalName) || ".jpg";
     const fileName = `${idCardIssueId}${ext}`;
     const filePath = path.join(`${SNAPCARD_IMAGE_BASE_PATH}/idcards`, fileName);

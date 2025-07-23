@@ -1,19 +1,16 @@
 "use client";
 import { saveAs } from 'file-saver';
 import { format } from "date-fns";
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Download as DownloadIcon } from 'lucide-react';
-import { User, IdCard, Clock, BadgeCheck } from 'lucide-react';
+import { User, IdCard, Clock } from 'lucide-react';
 import { pusherClient } from '@/lib/pusher-client';
 import Pusher from 'pusher-js';
 import { useAuth } from '@/hooks/use-auth';
-import { downloadIdCardDetails, fetchAdmissionYears, fetchDatesByAdmissionYear } from './action';
+import { fetchAdmissionYears, fetchDatesByAdmissionYear } from './action';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Stats {
@@ -36,12 +33,6 @@ interface User {
   type: 'Admin' | 'Member';
 }
 
-interface Student {
-  name: string;
-  uid: string;
-  time: string;
-}
-
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_PATH!;
 
 // const ADMISSION_YEARS = ['2021', '2022', '2023', '2024'];
@@ -52,15 +43,15 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_PATH!;
 //   '2024': ['2025-07-14', '2025-07-13'],
 // };
 
-const HOUR_LABELS = [
-  { from: 9, to: 10 },
-  { from: 10, to: 11 },
-  { from: 11, to: 12 },
-  { from: 12, to: 13 },
-  { from: 13, to: 14 },
-  { from: 14, to: 15 },
-  { from: 15, to: 16 },
-];
+// const HOUR_LABELS = [
+//   { from: 9, to: 10 },
+//   { from: 10, to: 11 },
+//   { from: 11, to: 12 },
+//   { from: 12, to: 13 },
+//   { from: 13, to: 14 },
+//   { from: 14, to: 15 },
+//   { from: 15, to: 16 },
+// ];
 
 function formatHourRange(from: number, to: number) {
   const format = (h: number) => {
@@ -71,14 +62,14 @@ function formatHourRange(from: number, to: number) {
   return `${format(from)} - ${format(to)}`;
 }
 
-function getMockStats(admissionYear: string, date: string): Stats {
-  return {
-    totalStudents: 1200,
-    totalIdCards: 900,
-    remaining: 300,
-    todayIdCards: 45,
-  };
-}
+// function getMockStats(admissionYear: string, date: string): Stats {
+//   return {
+//     totalStudents: 1200,
+//     totalIdCards: 900,
+//     remaining: 300,
+//     todayIdCards: 45,
+//   };
+// }
 
 // function getMockHourlyStats(date: string): HourlyStat[] {
 //   return [
@@ -92,25 +83,25 @@ function getMockStats(admissionYear: string, date: string): Stats {
 //   ];
 // }
 
-function getMockActiveUsers(): User[] {
-  return [
-    { name: 'Alice Johnson', email: 'alice@example.com', type: 'Admin' },
-    { name: 'Bob Smith', email: 'bob@example.com', type: 'Member' },
-    { name: 'Charlie Brown', email: 'charlie@example.com', type: 'Member' },
-    { name: 'David Lee', email: 'david@example.com', type: 'Member' },
-    { name: 'Eva Green', email: 'eva@example.com', type: 'Member' },
-    { name: 'Frank Ocean', email: 'frank@example.com', type: 'Member' },
-    { name: 'Grace Hopper', email: 'grace@example.com', type: 'Member' },
-    { name: 'Helen Carter', email: 'helen@example.com', type: 'Member' },
-    { name: 'Ian Wright', email: 'ian@example.com', type: 'Member' },
-    { name: 'Julia Stone', email: 'julia@example.com', type: 'Member' },
-    { name: 'Kevin Hart', email: 'kevin@example.com', type: 'Member' },
-    { name: 'Linda Park', email: 'linda@example.com', type: 'Member' },
-    { name: 'Mike Ross', email: 'mike@example.com', type: 'Member' },
-    { name: 'Nina Simone', email: 'nina@example.com', type: 'Member' },
-    { name: 'Oscar Wilde', email: 'oscar@example.com', type: 'Member' },
-  ];
-}
+// function getMockActiveUsers(): User[] {
+//   return [
+//     { name: 'Alice Johnson', email: 'alice@example.com', type: 'Admin' },
+//     { name: 'Bob Smith', email: 'bob@example.com', type: 'Member' },
+//     { name: 'Charlie Brown', email: 'charlie@example.com', type: 'Member' },
+//     { name: 'David Lee', email: 'david@example.com', type: 'Member' },
+//     { name: 'Eva Green', email: 'eva@example.com', type: 'Member' },
+//     { name: 'Frank Ocean', email: 'frank@example.com', type: 'Member' },
+//     { name: 'Grace Hopper', email: 'grace@example.com', type: 'Member' },
+//     { name: 'Helen Carter', email: 'helen@example.com', type: 'Member' },
+//     { name: 'Ian Wright', email: 'ian@example.com', type: 'Member' },
+//     { name: 'Julia Stone', email: 'julia@example.com', type: 'Member' },
+//     { name: 'Kevin Hart', email: 'kevin@example.com', type: 'Member' },
+//     { name: 'Linda Park', email: 'linda@example.com', type: 'Member' },
+//     { name: 'Mike Ross', email: 'mike@example.com', type: 'Member' },
+//     { name: 'Nina Simone', email: 'nina@example.com', type: 'Member' },
+//     { name: 'Oscar Wilde', email: 'oscar@example.com', type: 'Member' },
+//   ];
+// }
 
 // function getMockStudentsForHour(hour: string): Student[] {
 //   return [
@@ -118,21 +109,21 @@ function getMockActiveUsers(): User[] {
 //     { name: 'Jane Smith', uid: '456', time: `${hour}:42` },
 //   ];
 // }
-const formatHourSlot = (hour: number) => {
-  const start = `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
-  const endHour = (hour + 1) % 24;
-  const end = `${endHour % 12 || 12}:00 ${endHour < 12 ? 'AM' : 'PM'}`;
-  return `${start} - ${end}`;
-};
+// const formatHourSlot = (hour: number) => {
+//   const start = `${hour % 12 || 12}:00 ${hour < 12 ? 'AM' : 'PM'}`;
+//   const endHour = (hour + 1) % 24;
+//   const end = `${endHour % 12 || 12}:00 ${endHour < 12 ? 'AM' : 'PM'}`;
+//   return `${start} - ${end}`;
+// };
 
 
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase();
-}
+// function getInitials(name: string) {
+//   return name
+//     .split(' ')
+//     .map((n) => n[0])
+//     .join('')
+//     .toUpperCase();
+// }
 
 export default function ReportsPage() {
   const { user } = useAuth();
@@ -142,7 +133,7 @@ export default function ReportsPage() {
   const [date, setDate] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [hourlyStats, setHourlyStats] = useState<HourlyStat[]>([]);
-  const [activeUsers, setActiveUsers] = useState<User[]>([]);
+  const  setActiveUsers = useState<User[]>([])[1];
   const [remountKey, setRemountKey] = useState(0);
   const [downloadingHour, setDownloadingHour] = useState<string | null>(null);
 
@@ -155,9 +146,11 @@ export default function ReportsPage() {
   }, []);
 
   // Use authenticated user info
-  const currentUser = user
-    ? { name: user.name, email: user.email, type: user.isAdmin ? 'Admin' : 'Member' }
-    : { name: 'Unknown', email: 'unknown@example.com', type: 'Member' };
+  const currentUser = useMemo(() => (
+    user
+      ? { name: user.name, email: user.email, type: user.isAdmin ? 'Admin' : 'Member' }
+      : { name: 'Unknown', email: 'unknown@example.com', type: 'Member' }
+  ), [user]);
 
   // Pusher presence channel for active users
   useEffect(() => {
@@ -173,11 +166,11 @@ export default function ReportsPage() {
       }
     });
     const channel = pusher.subscribe('presence-reports');
-    channel.bind('pusher:subscription_succeeded', (members: any) => {
+    channel.bind('pusher:subscription_succeeded', (members: { members: Record<string, User> }) => {
       console.log('[Pusher] subscription_succeeded', members);
       setActiveUsers(Object.values(members.members) as User[]);
     });
-    channel.bind('pusher:member_added', (member: any) => {
+    channel.bind('pusher:member_added', (member: { info: User }) => {
       console.log('[Pusher] member_added', member);
       setActiveUsers(prev => {
         const newUser = member.info as User;
@@ -188,14 +181,14 @@ export default function ReportsPage() {
         return [...prev, newUser];
       });
     });
-    channel.bind('pusher:member_removed', (member: any) => {
+    channel.bind('pusher:member_removed', (member: { id: string }) => {
       console.log('[Pusher] member_removed', member);
       setActiveUsers(prev => prev.filter(u => u.email !== member.id));
     });
-    channel.bind('pusher:subscription_error', (err: any) => {
+    channel.bind('pusher:subscription_error', (err: unknown) => {
       console.error('[Pusher] subscription_error', err);
     });
-    pusher.connection.bind('error', (err: any) => {
+    pusher.connection.bind('error', (err: unknown) => {
       console.error('[Pusher] connection error', err);
     });
     return () => {
@@ -203,13 +196,13 @@ export default function ReportsPage() {
       channel.unsubscribe();
       pusher.disconnect();
     };
-  }, [currentUser.email, currentUser.name, currentUser.type]);
+  }, [currentUser.email, currentUser.name, currentUser, currentUser.type, setActiveUsers]);
 
   // Fetch stats and hourly on mount and when year/date changes
   useEffect(() => {
     if (!admissionYear || !date) return;
     async function fetchStats() {
-      const res = await fetch(`/api/reports/stats?year=${admissionYear}&date=${date}`);
+      const res = await fetch(`${BASE_URL}/api/reports/stats?year=${admissionYear}&date=${date}`);
       const data = await res.json();
       if (data.success) {
         setStats(data.stats);
@@ -234,7 +227,7 @@ useEffect(() => {
       setDate(formattedDates[formattedDates.length - 1]);
     }
   });
-}, [admissionYear]);
+}, [admissionYear, date, setAdmissionYear, setDate]);
 
 
   // Subscribe to Pusher for real-time stats updates
@@ -286,42 +279,19 @@ useEffect(() => {
     // setDate(DATES_BY_YEAR[admissionYear][0]);
   }, [admissionYear]);
 
-  const handleDownloadHour = (hour: string) => {
-    // const students = getMockStudentsForHour(hour);
-    // const csvRows = [
-    //   'Name,UID,Time',
-    //   ...students.map(s => `${s.name},${s.uid},${s.time}`)
-    // ];
-    // const csvContent = csvRows.join('\n');
-    // const blob = new Blob([csvContent], { type: 'text/csv' });
-    // const url = URL.createObjectURL(blob);
-    // const a = document.createElement('a');
-    // a.href = url;
-    // a.download = `id-cards-${admissionYear}-${date}-${hour}.csv`;
-    // a.click();
-    // URL.revokeObjectURL(url);
-  };
-
   const handleDownloadAllZip = async () => {
+    if (!admissionYear) return;
     const res = await fetch(`${BASE_URL}/api/reports/id-cards-zip?admissionYear=${admissionYear}`);
     const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `id-cards-${admissionYear}-${date}.zip`;
-    a.click();
-    URL.revokeObjectURL(url);
+    saveAs(blob, `id-cards-${admissionYear}-${date}.zip`);
   };
   
 
   // Table and users max heights (adjust as needed for your layout)
-  const tableMaxHeight = '260px';
-  const usersMaxHeight = '260px';
-
   // Filter out the current user from the active users list
-  const filteredActiveUsers = activeUsers.filter(
-    (u) => u.email !== currentUser.email
-  );
+  // const filteredActiveUsers = activeUsers.filter(
+  //   (u) => u.email !== currentUser.email
+  // );
 
   return (user?.isAdmin ? (
     <div key={remountKey} className="flex flex-col min-h-screen h-screen overflow-hidden p-2">
@@ -341,7 +311,7 @@ useEffect(() => {
             </SelectContent>
           </Select>
           Date: 
-          <Select value={date ?? ""} onValueChange={setDate ?? ""}>
+          <Select value={date ?? ""} onValueChange={setDate}>
             <SelectTrigger className="w-44">
               <SelectValue placeholder="Date" />
             </SelectTrigger>

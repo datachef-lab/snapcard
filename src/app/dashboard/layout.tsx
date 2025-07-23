@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { AppSidebar } from "@/components/app-sidebar"
 // import { Separator } from "@/components/ui/separator"
 import {
@@ -26,7 +26,7 @@ function InactivityLogoutProvider({ children }: { children: React.ReactNode }) {
     timerRef.current = setTimeout(() => {
       logout();
     }, INACTIVITY_LIMIT);
-  }, [logout]);
+  }, [logout, INACTIVITY_LIMIT]);
 
   React.useEffect(() => {
     // Patch fetch to reset timer on any API call
@@ -59,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
     return 'test@gmail.com';
   };
-  const currentUser = { name: 'Test User', email: getUserEmail(), type: currentUserType };
+  const currentUser = useMemo(() => ({ name: 'Test User', email: getUserEmail(), type: currentUserType }), [getUserEmail, currentUserType]);
 
   React.useEffect(() => {
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
@@ -78,7 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       channel.unsubscribe();
       pusher.disconnect();
     };
-  }, [currentUser.email, currentUser.name, currentUser.type]);
+  }, [currentUser.email, currentUser.name, currentUser.type, currentUser]);
 
   return (
     <InactivityLogoutProvider>

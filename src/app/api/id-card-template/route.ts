@@ -11,26 +11,45 @@ export async function GET() {
 // POST: Create a new template
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
-  const givenTemplate: any = {};
+  const givenTemplate: Partial<IdCardTemplate> = {};
   for (const [key, value] of formData.entries()) {
-    if ([
-      'nameCoordinates',
-      'courseCoordinates',
-      'uidCoordinates',
-      'mobileCoordinates',
-      'bloodGroupCoordinates',
-      'sportsQuotaCoordinates',
-      'qrcodeCoordinates',
-      'validTillDateCoordinates',
-      'photoDimension'
-    ].includes(key)) {
-      givenTemplate[key] = value ? JSON.parse(value as string) : undefined;
-    } else if (key === 'qrcodeSize') {
-      givenTemplate[key] = Number(value);
-    } else if (key === 'disabled') {
-      givenTemplate[key] = value === 'true' || value === '1';
-    } else if (key !== 'templateFile') {
-      givenTemplate[key] = value;
+    switch (key) {
+      case 'nameCoordinates':
+        givenTemplate.nameCoordinates = value ? JSON.parse(value as string) : undefined;
+        break;
+      case 'courseCoordinates':
+        givenTemplate.courseCoordinates = value ? JSON.parse(value as string) : undefined;
+        break;
+      case 'uidCoordinates':
+        givenTemplate.uidCoordinates = value ? JSON.parse(value as string) : undefined;
+        break;
+      case 'mobileCoordinates':
+        givenTemplate.mobileCoordinates = value ? JSON.parse(value as string) : undefined;
+        break;
+      case 'bloodGroupCoordinates':
+        givenTemplate.bloodGroupCoordinates = value ? JSON.parse(value as string) : undefined;
+        break;
+      case 'sportsQuotaCoordinates':
+        givenTemplate.sportsQuotaCoordinates = value ? JSON.parse(value as string) : undefined;
+        break;
+      case 'qrcodeCoordinates':
+        givenTemplate.qrcodeCoordinates = value ? JSON.parse(value as string) : undefined;
+        break;
+      case 'validTillDateCoordinates':
+        givenTemplate.validTillDateCoordinates = value ? JSON.parse(value as string) : undefined;
+        break;
+      case 'photoDimension':
+        givenTemplate.photoDimension = value ? JSON.parse(value as string) : undefined;
+        break;
+      case 'qrcodeSize':
+        givenTemplate.qrcodeSize = Number(value);
+        break;
+      case 'disabled':
+        givenTemplate.disabled = value === 'true' || value === '1';
+        break;
+      case 'admissionYear':
+        givenTemplate.admissionYear = String(value);
+        break;
     }
   }
   // Fill missing required fields with defaults
@@ -45,7 +64,7 @@ export async function POST(req: NextRequest) {
     'validTillDateCoordinates',
     'photoDimension'
   ];
-  const defaultValues: Record<string, any> = {
+  const defaultValues: Record<string, unknown> = {
     nameCoordinates: { x: 0, y: 0 },
     courseCoordinates: { x: 0, y: 0 },
     uidCoordinates: { x: 0, y: 0 },
@@ -57,12 +76,12 @@ export async function POST(req: NextRequest) {
     photoDimension: { x: 0, y: 0, width: 0, height: 0 }
   };
   for (const key of requiredJsonFields) {
-    if (!givenTemplate[key]) {
-      givenTemplate[key] = defaultValues[key];
+    if (!givenTemplate[key as keyof IdCardTemplate]) {
+      givenTemplate[key as keyof IdCardTemplate] = defaultValues[key];
     }
   }
   const templateFile = formData.get('templateFile');
-  const created = await admissionYearService.createIdCardTemplate(givenTemplate, templateFile instanceof File ? templateFile : undefined);
+  const created = await admissionYearService.createIdCardTemplate(givenTemplate as IdCardTemplate, templateFile instanceof File ? templateFile : undefined);
   return NextResponse.json({ success: true, data: created });
 }
 
