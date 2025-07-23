@@ -415,7 +415,7 @@ useEffect(() => {
                               onClick={async () => {
                                 setDownloadingHour(from);
                                 try {
-                                  const res = await fetch(`/api/reports/id-card-download?date=${date}&hour=${from.substring(0, 2)}`);
+                                  const res = await fetch(`${BASE_URL}/api/reports/id-card-download?date=${date}&hour=${from.substring(0, 2)}`);
                                   const blob = await res.blob();
                                   saveAs(blob, `id-cards-${date}-${from.substring(0, 2)}.xlsx`);
                                 } finally {
