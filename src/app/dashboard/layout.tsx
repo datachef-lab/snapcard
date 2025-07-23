@@ -17,8 +17,8 @@ import Pusher from 'pusher-js';
 function InactivityLogoutProvider({ children }: { children: React.ReactNode }) {
   const { logout } = useAuth();
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
-  // const INACTIVITY_LIMIT = 60 * 1 * 1000; // 1 hour
-  const INACTIVITY_LIMIT = 60 * 1 * 1000; // 1 minute
+  const INACTIVITY_LIMIT = 60 * 30 * 1000; // 30 minutes
+  // const INACTIVITY_LIMIT = 60 * 1 * 1000; // 1 minute
 
   // Reset timer function
   const resetTimer = React.useCallback(() => {

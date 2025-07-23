@@ -49,7 +49,7 @@ export default function SettingsPage() {
     setShowEditModal(true);
   };
 
-  const handleFormChange = (field: keyof User, value: string) => {
+  const handleFormChange = (field: keyof User, value: string | boolean) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -128,6 +128,16 @@ export default function SettingsPage() {
               <Input placeholder="Email" value={form.email} onChange={e => handleFormChange('email', e.target.value)} />
               <Input placeholder="Phone" value={form.phone} onChange={e => handleFormChange('phone', e.target.value)} />
               <Input placeholder="Profile Image URL" value={form.profileImage || ''} onChange={e => handleFormChange('profileImage', e.target.value)} />
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isAdmin-add"
+                  checked={form.isAdmin || false}
+                  onChange={e => handleFormChange('isAdmin', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="isAdmin-add" className="text-sm">Is Admin</label>
+              </div>
               <Button onClick={handleAddSubmit} className="mt-2">Save</Button>
             </div>
           </DialogContent>
@@ -141,6 +151,16 @@ export default function SettingsPage() {
               <Input placeholder="Email" value={form.email} onChange={e => handleFormChange('email', e.target.value)} />
               <Input placeholder="Phone" value={form.phone} onChange={e => handleFormChange('phone', e.target.value)} />
               <Input placeholder="Profile Image URL" value={form.profileImage || ''} onChange={e => handleFormChange('profileImage', e.target.value)} />
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isAdmin-edit"
+                  checked={form.isAdmin || false}
+                  onChange={e => handleFormChange('isAdmin', e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <label htmlFor="isAdmin-edit" className="text-sm">Is Admin</label>
+              </div>
               <Button onClick={handleEditSubmit} className="mt-2">Save</Button>
             </div>
           </DialogContent>

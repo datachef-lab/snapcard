@@ -342,7 +342,8 @@ export default function Page() {
   }, [userDetails, capturedImage, positions, positions.qrcodeSize, validTillDate, positions.photoDimension]);
 
   const downloadCard = () => {
-    if (!generatedCard && !userDetails && !user?.isAdmin) return
+    if (!generatedCard && !userDetails) return
+    if (!user?.isAdmin) return;
 
     const link = document.createElement("a")
     link.download = `${userDetails!.name || "ID"}_card.png`
