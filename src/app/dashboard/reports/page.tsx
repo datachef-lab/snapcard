@@ -230,7 +230,7 @@ useEffect(() => {
       }
     }
   });
-}, [admissionYear]);
+}, [admissionYear, date]);
 
 
   // Subscribe to Pusher for real-time stats updates

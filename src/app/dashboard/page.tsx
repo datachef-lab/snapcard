@@ -7,7 +7,7 @@ import Webcam from "react-webcam"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Camera, Download, User, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react"
+import { Camera, User, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { IdCardIssue, Student } from "@/types"
@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
 import { IdCardTemplate } from "@/lib/db/schema";
-import { useAuth } from "@/hooks/use-auth";
+// import { useAuth } from "@/hooks/use-auth";
 import NextImage from 'next/image';
 import * as faceapi from 'face-api.js';
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 
 export default function Page() {
-  const {user} = useAuth();
+  // const {user} = useAuth();
   const [value, setValue] = useState("");
   // const router = useRouter();
   // const pathname = usePathname();
@@ -72,7 +72,7 @@ export default function Page() {
   const [notFound, setNotFound] = useState(false);
   const setFile = useState<File | null>(null)[1];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [faceDetected, setFaceDetected] = useState(false); // For face detection
+  const setFaceDetected = useState(false)[1]; // For face detection
   const [numFaces, setNumFaces] = useState(0); // For face detection
   const [modelsLoaded, setModelsLoaded] = useState(false); // Face-api.js models
 
@@ -357,7 +357,18 @@ export default function Page() {
     // Use the clean template image
     // templateImg.src = `${process.env.NEXT_PUBLIC_BASE_PATH}/id-template-new-frontend.jpeg`
     templateImg.src = previewUrl;
-  }, [capturedImage, userDetails, positions, positions.qrcodeSize, validTillDate, positions.photoDimension, previewUrl]);
+  }, [capturedImage, userDetails, previewUrl, validTillDate,
+      positions.photoDimension,
+      positions.nameCoordinates,
+      positions.courseCoordinates,
+      positions.uidCoordinates,
+      positions.mobileCoordinates,
+      positions.bloodGroupCoordinates,
+      positions.sportsQuotaCoordinates,
+      positions.validTillDateCoordinates,
+      positions.qrcodeCoordinates,
+      positions.qrcodeSize
+  ]);
 
   useEffect(() => {
     if (capturedImage && userDetails && userDetails.name && userDetails.courseName) {
@@ -513,7 +524,6 @@ export default function Page() {
   // Face detection loop
   useEffect(() => {
     if (!showWebcam || !modelsLoaded) return;
-    let intervalId: NodeJS.Timeout;
     const detect = async () => {
       if (webcamRef.current && webcamRef.current.video && modelsLoaded) {
         const options = new faceapi.TinyFaceDetectorOptions({
@@ -543,7 +553,7 @@ export default function Page() {
         }
       }
     };
-    intervalId = setInterval(detect, 400); // Check every 400ms
+    const intervalId = setInterval(detect, 400); // Check every 400ms
     return () => clearInterval(intervalId);
   }, [showWebcam, modelsLoaded]);
 
@@ -1114,7 +1124,7 @@ export default function Page() {
                               .then(res => res.json())
                               .then(data => setIdCardIssues(data.data || []));
                             toast.success("ID card issue deleted.");
-                          } catch (err) {
+                          } catch {
                             toast.error("Failed to delete ID card issue.");
                           }
                         }}>Delete</Button>
