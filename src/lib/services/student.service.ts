@@ -234,6 +234,10 @@ export async function findStudents({
 
             ay.accademicYearName AS academicYear
 
+            spd.quotatype,
+            spd.rollNumber,
+            spd.contactNo
+
         FROM studentpersonaldetails spd
 
         LEFT JOIN (

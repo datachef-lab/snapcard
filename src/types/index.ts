@@ -7,6 +7,7 @@ export interface Student {
     securityQ: number | null | string;
     phoneMobileNo: string | null;
 
+
     bloodGroupId: number | null;
     bloodGroupName: string | null;
 
@@ -28,7 +29,12 @@ export interface Student {
     sessionName: string | null;
 
     academicYear: string;
+    // rfidno: string | null;
     active: boolean;
+    classRollNumber: string | null;
+    quotatype: string | null;
+    rollNumber: string | null;
+    contactNo: string | null;
 }
 
 export interface IdCardIssue {

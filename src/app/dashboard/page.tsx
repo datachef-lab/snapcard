@@ -21,6 +21,7 @@ import NextImage from 'next/image';
 import * as faceapi from 'face-api.js';
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { updateRfid } from '@/lib/services/student.service';
 
 
 export default function Page() {
@@ -72,7 +73,7 @@ export default function Page() {
   const [notFound, setNotFound] = useState(false);
   const setFile = useState<File | null>(null)[1];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const setFaceDetected = useState(false)[1]; // For face detection
+  const [faceDetected, setFaceDetected] = useState(false); // For face detection
   const [numFaces, setNumFaces] = useState(0); // For face detection
   const [modelsLoaded, setModelsLoaded] = useState(false); // Face-api.js models
 
@@ -109,60 +110,47 @@ export default function Page() {
     }
   }, [userDetails, templates, BASE_PATH, setSelectedTemplate, setPositions, setPreviewUrl, setFile]);
 
-  useEffect(() => {
-    const fetchStudent = async () => {
-      if (!value) {
-        setUserDetails(null);
+  // Remove auto-search on input change. Add form with submit button for UID search.
+
+  const [searchValue, setSearchValue] = useState("");
+
+  // Remove useEffect that fetches student on value change
+  // Instead, add a handleSearchSubmit function
+  const handleSearchSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setUserDetails(null);
+    setNotFound(false);
+    setLoading(true);
+    try {
+      const res = await fetch(`${BASE_PATH}/api/students?uid=${searchValue}`);
+      const data = await res.json();
+      if (data.content && data.content.length > 0) {
+        setUserDetails({...data.content[0], courseName: data.content[0].courseName ?? '', phoneMobileNo: data.content[0].phoneMobileNo ?? ''});
         setNotFound(false);
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      setNotFound(false);
-      try {
-        const res = await fetch(`${BASE_PATH}/api/students?uid=${value}`);
-        const data = await res.json();
-        if (data.content && data.content.length > 0) {
-          setUserDetails(data.content[0]);
-           
-          setNotFound(false);
-          // Fetch template for this student's admission year
-          const admissionYear = data.content[0].academicYear;
-          if (admissionYear) {
-            const templateRes = await fetch(`${BASE_PATH}/api/id-card-template?admissionYear=${admissionYear}`);
-            if (templateRes.ok) {
-              const template = await templateRes.json();
-              if (template) {
-                // setPositions({
-                //   nameCoordinates: template.nameCoordinates,
-                //   courseCoordinates: template.courseCoordinates,
-                //   uidCoordinates: template.uidCoordinates,
-                //   mobile: template.mobileCoordinates,
-                //   bloodGroup: template.bloodGroupCoordinates,
-                //   sequrityQ: template.sportsQuotaCoordinates, // or template.securityQCoordinates if exists
-                //   qrcode: template.qrcodeCoordinates,
-                //   validTillDate: template.validTillDateCoordinates || { x: 0, y: 0 },
-                // });
-                // setQrcodeSize(template.qrcodeSize);
-                // setPhotoRect(template.photoDimension);
-              }
+        // Fetch template for this student's admission year (same as before)
+        const admissionYear = data.content[0].academicYear;
+        if (admissionYear) {
+          const templateRes = await fetch(`${BASE_PATH}/api/id-card-template?admissionYear=${admissionYear}`);
+          if (templateRes.ok) {
+            const template = await templateRes.json();
+            if (template) {
+              // setPositions, etc. (same as before)
             }
           }
-        } else {
-          setUserDetails(null);
-          setNotFound(true);
         }
-      } catch {
+      } else {
         setUserDetails(null);
         setNotFound(true);
-      } finally {
-        // setCapturedImage(null)
-        // setGeneratedCard(null)
-        setLoading(false);
       }
-    };
-    fetchStudent();
-  }, [value, BASE_PATH]);
+    } catch {
+      setUserDetails(null);
+      setNotFound(true);
+    } finally {
+      setCapturedImage(null); 
+      setGeneratedCard(null);
+      setLoading(false);
+    }
+  };
 
   const fetchTemplates = useCallback(async () => {
     const res = await fetch(`${BASE_PATH}/api/id-card-template`);
@@ -181,12 +169,28 @@ export default function Page() {
 
 
   const capture = useCallback(() => {
-    const imageSrc = webcamRef.current?.getScreenshot()
-    if (imageSrc) {
-      setCapturedImage(imageSrc)
-      setShowWebcam(false)
+    // Always enable capture, crop to green box
+    const video = webcamRef.current?.video;
+    if (video) {
+      // Create a canvas to crop the center 420x420 region
+      const cropWidth = 420;
+      const cropHeight = 420;
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+      const cropX = (videoWidth - cropWidth) / 2;
+      const cropY = (videoHeight - cropHeight) / 2;
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = cropWidth;
+      tempCanvas.height = cropHeight;
+      const tempCtx = tempCanvas.getContext('2d');
+      if (tempCtx) {
+        tempCtx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+        const croppedImage = tempCanvas.toDataURL('image/jpeg');
+        setCapturedImage(croppedImage);
+        setShowWebcam(false);
+      }
     }
-  }, [webcamRef])
+  }, [webcamRef]);
 
   const generateIDCard = useCallback(async () => {
     console.log("Generating ID card")
@@ -276,26 +280,90 @@ export default function Page() {
 
         // Name
         if (userDetails && userDetails.name) {
-          ctx.font = "bold 32px Arial"
-          ctx.fillText(userDetails.name.toUpperCase(), positions.nameCoordinates.x, positions.nameCoordinates.y)
+          const blueBarWidth = 80; // width of the blue bar with logo
+          const rightMargin = 20;
+          const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
+          const centerX = blueBarWidth + whiteAreaWidth / 2;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(blueBarWidth, positions.nameCoordinates.y - 40, whiteAreaWidth, 50);
+          ctx.clip();
+          ctx.font = "bold 32px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(userDetails.name.toUpperCase(), centerX, positions.nameCoordinates.y, whiteAreaWidth);
+          ctx.restore();
         }
-
-        // Course
-        if (userDetails && userDetails.courseName) {
-          ctx.font = "24px Arial"
-          ctx.fillText(userDetails.courseName, positions.courseCoordinates.x, positions.courseCoordinates.y)
-        }
-
-        // UID
+        // UID (centered in white area, with label)
         if (userDetails && userDetails.codeNumber) {
-          ctx.font = "bold 20px Arial"
-          ctx.fillText(`UID: ${userDetails.codeNumber}`, positions.uidCoordinates.x, positions.uidCoordinates.y)
+          const blueBarWidth = 80;
+          const rightMargin = 20;
+          const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
+          const centerX = blueBarWidth + whiteAreaWidth / 2;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(blueBarWidth, positions.uidCoordinates.y - 20, whiteAreaWidth, 40);
+          ctx.clip();
+          ctx.font = "bold 24px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(`${userDetails.codeNumber}`, centerX, positions.uidCoordinates.y, whiteAreaWidth);
+          ctx.restore();
+        }
+        // Captured Photo (centered in white area)
+        if (capturedImage && canvas && ctx) {
+          const blueBarWidth = 80;
+          const rightMargin = 20;
+          const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
+          const photoWidth = positions.photoDimension.width;
+          const photoHeight = positions.photoDimension.height;
+          const photoX = blueBarWidth + (whiteAreaWidth - photoWidth) / 2;
+          const photoY = positions.photoDimension.y;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(photoX, photoY, photoWidth, photoHeight);
+          ctx.clip();
+          const userImg = new window.Image();
+          userImg.src = capturedImage;
+          // Draw synchronously if already loaded, otherwise onload
+          if (userImg.complete) {
+            ctx.drawImage(userImg, photoX, photoY, photoWidth, photoHeight);
+          } else {
+            userImg.onload = function() {
+              ctx.drawImage(userImg, photoX, photoY, photoWidth, photoHeight);
+            };
+          }
+          ctx.restore();
+        }
+        // Valid Till Date (centered in white area)
+        if (validTillDate) {
+          const blueBarWidth = 80;
+          const rightMargin = 20;
+          const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
+          const centerX = blueBarWidth + whiteAreaWidth / 2;
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(blueBarWidth, positions.validTillDateCoordinates.y - 20, whiteAreaWidth, 40);
+          ctx.clip();
+          ctx.font = "bold 16px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(`Valid Till: ${validTillDate}`, centerX, positions.validTillDateCoordinates.y, whiteAreaWidth);
+          ctx.restore();
         }
 
-        // Mobile
-        if (userDetails && userDetails.emrgnResidentPhNo) {
-          ctx.font = "bold 20px Arial"
-          ctx.fillText(`MOB NO.: ${userDetails.emrgnResidentPhNo}`, positions.mobileCoordinates.x, positions.mobileCoordinates.y)
+        // Course (left-aligned with yellow arrow)
+        const courseText = userDetails && userDetails.courseName ? `${userDetails.courseName}${userDetails.shiftName ? ` (${userDetails.shiftName})` : ''}` : '';
+        if (courseText) {
+          const arrowLeftX = 110; // Adjust this value to match the yellow arrow's left edge in the template
+          ctx.font = "bold 24px Arial";
+          ctx.textAlign = "left";
+          ctx.fillText(courseText, arrowLeftX, positions.courseCoordinates.y);
+        }
+
+        // Mobile (left-aligned with yellow arrow)
+        if (userDetails) {
+          const arrowLeftX = 110; // Same as above
+          ctx.font = "bold 24px Arial";
+          ctx.textAlign = "left";
+          ctx.fillText(`${userDetails.contactNo ?? ''}`, arrowLeftX, positions.mobileCoordinates.y);
         }
 
         // Blood Group
@@ -308,15 +376,7 @@ export default function Page() {
         if (userDetails && userDetails.securityQ) {
           ctx.font = "bold 24px Arial"
           ctx.textAlign = "left"
-          ctx.fillText(String(userDetails.securityQ), positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
-          ctx.textAlign = "center"
-        }
-
-        // Valid Till Date (optional, only if present)
-        if (validTillDate) {
-          ctx.font = "bold 16px Arial"
-          ctx.textAlign = "left"
-          ctx.fillText(`Valid Till: ${validTillDate}`, positions.validTillDateCoordinates.x, positions.validTillDateCoordinates.y)
+          ctx.fillText(String(userDetails.quotatype), positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
           ctx.textAlign = "center"
         }
 
@@ -371,7 +431,7 @@ export default function Page() {
   ]);
 
   useEffect(() => {
-    if (capturedImage && userDetails && userDetails.name && userDetails.courseName) {
+    if (capturedImage && userDetails && userDetails.name) {
       generateIDCard();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -409,7 +469,7 @@ export default function Page() {
           name: userDetails?.name || '',
           blood_group_name: userDetails?.bloodGroupName || '',
           course_name: userDetails?.courseName || '',
-          phone_mobile_no: userDetails?.phoneMobileNo || '',
+          phone_mobile_no: userDetails?.contactNo || '',
           security_q: userDetails?.securityQ || '',
           sports_quota: userDetails?.securityQ || '',
           created_at: new Date().toISOString(),
@@ -475,13 +535,12 @@ export default function Page() {
       .catch(() => setIdCardIssues([]));
   }, [userDetails?.id, BASE_PATH, userDetails]);
 
+  // Set default valid till date if not present
   useEffect(() => {
-    if (userDetails?.academicYear && !validTillDate) {
-      const year = Number(userDetails.academicYear) + 4;
-      setValidTillDate(`31-07-${year}`);
+    if (!validTillDate) {
+      setValidTillDate('31-07-2028');
     }
-    // Optionally, reset validTillDate if userDetails changes
-  }, [userDetails?.academicYear, validTillDate]);
+  }, [userDetails, validTillDate]);
 
 
   // Sync input value with current UID param
@@ -535,20 +594,36 @@ export default function Page() {
           options
         );
         setNumFaces(detections.length);
-        setFaceDetected(detections.length === 1);
-
-        // Draw face box overlay
+        // Fixed frame in center
+        const frameWidth = 420;
+        const frameHeight = 420;
+        const frameX = (900 - frameWidth) / 2;
+        const frameY = (600 - frameHeight) / 2;
+        const margin = 50; // Allow 10px margin
+        let faceInFrame = false;
+        for (const det of detections) {
+          const { x, y, width, height } = det.box;
+          if (
+            x >= frameX - margin &&
+            y >= frameY - margin &&
+            x + width <= frameX + frameWidth + margin &&
+            y + height <= frameY + frameHeight + margin
+          ) {
+            faceInFrame = true;
+            break;
+          }
+        }
+        setFaceDetected(faceInFrame);
+        // Draw overlay
         const canvas = faceCanvasRef.current;
         if (canvas) {
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (detections.length === 1) {
-              const { x, y, width, height } = detections[0].box;
-              ctx.strokeStyle = '#00FF00';
-              ctx.lineWidth = 3;
-              ctx.strokeRect(x, y, width, height);
-            }
+            // Draw only the fixed green frame
+            ctx.strokeStyle = '#00FF00';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(frameX, frameY, frameWidth, frameHeight);
           }
         }
       }
@@ -569,14 +644,17 @@ export default function Page() {
 
       {/* active: {JSON.stringify(userDetails?.active)} */}
 
-        <Input
-          placeholder="Enter student UID or code number"
-          value={value}
-          onChange={e => setValue(e.target.value.replace(/[^0-9]/g, ""))}
-          className="w-full max-w-xs"
-          inputMode="numeric"
-          pattern="[0-9]*"
-        />
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 mb-4">
+          <Input
+            placeholder="Enter student UID or code number"
+            value={searchValue}
+            onChange={e => setSearchValue(e.target.value.replace(/[^0-9]/g, ""))}
+            className="w-full max-w-xs"
+            inputMode="numeric"
+            pattern="[0-9]*"
+          />
+          <Button type="submit" className="h-10 px-6 bg-blue-600 text-white rounded-lg">Load</Button>
+        </form>
         <div className="mt-8">
           {/* {JSON.stringify(userDetails)} */}
           {loading && (
@@ -600,7 +678,7 @@ export default function Page() {
                   <div className="flex gap-4">
                     {/* Left: Editable Form */}
                     <div className="w-[66%]">
-                      <Card className="p-6 bg-blue-50 rounded-xl shadow-md flex flex-col justify-center h-full">
+                      <Card className="p-6 bg-blue-50 rounded-xl shadow-md flex flex-col h-full">
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2 justify-between">
                             <div className="flex items-center gap-2">
@@ -617,6 +695,44 @@ export default function Page() {
                               </Button>
                             </div>
                           </CardTitle>
+                          {/* RFID input form below Personal Details row */}
+                          <form
+                            className="flex items-center gap-2 mt-4"
+                            onSubmit={async e => {
+                              e.preventDefault();
+                              if (!userDetails?.codeNumber || !userDetails.rfidno) return;
+                              try {
+                                const res = await fetch(`/api/students/update-rfid`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ uid: userDetails.codeNumber, rfid: userDetails.rfidno })
+                                });
+                                if (res.ok) {
+                                  const data = await res.json();
+                                  if (data && data.student) {
+                                    setUserDetails({ ...userDetails, rfidno: data.student.rfidno });
+                                    toast.success('RFID updated successfully!');
+                                  } else {
+                                    toast.error('Failed to update RFID.');
+                                  }
+                                } else {
+                                  toast.error('Failed to update RFID.');
+                                }
+                              } catch (err) {
+                                toast.error('Error updating RFID.');
+                              }
+                            }}
+                          >
+                            <label htmlFor="rfid" className="font-semibold">RFID:</label>
+                            <Input
+                              id="rfid"
+                              value={userDetails?.rfidno || ''}
+                              onChange={e => setUserDetails(prev => prev ? { ...prev, rfidno: e.target.value } : prev)}
+                              placeholder="Enter RFID"
+                              className="w-48"
+                            />
+                            <Button type="submit" className="h-9 px-4 bg-blue-600 text-white rounded-lg">Save</Button>
+                          </form>
                         </CardHeader>
                         <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
                           <SheetContent side="right">
@@ -668,21 +784,10 @@ export default function Page() {
                                   width={400}
                                   height={300}
                                   className="w-full h-auto object-contain rounded-lg border mb-4"
+                                  onContextMenu={e => e.preventDefault()}
+                                  draggable={false}
                                 />
-                                <Button
-                                  className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white mt-2"
-                                  onClick={() => {
-                                    const url = `${BASE_PATH}/api/students/fetch-image?id_card_issue_id=${viewCardIssueId}`;
-                                    const link = document.createElement('a');
-                                    link.href = url;
-                                    link.download = `id_card_${viewCardIssueId}.png`;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                  }}
-                                >
-                                  Download ID Card
-                                </Button>
+                                {/* Download button removed as requested */}
                               </>
                             )}
                           </DialogContent>
@@ -693,169 +798,72 @@ export default function Page() {
                             <div><b>Session:</b> {userDetails.sessionName || "-"}</div>
                             <div><b>Section:</b> {userDetails.sectionName || "-"}</div>
                             <div><b>Shift:</b> {userDetails.shiftName || "-"}</div>
-                            <div className="mt-2"><b>Emergency Numbers:</b></div>
+                            {/* <div className="mt-2"><b>Emergency Numbers:</b></div>
                             <ul className="ml-4 list-disc">
                               <li>Self: {userDetails.emrgnResidentPhNo || "-"}</li>
                               <li>Father: {userDetails.emrgnFatherMobno || "-"}</li>
                               <li>Mother: {userDetails.emrgnMotherMobNo || "-"}</li>
-                            </ul>
+                            </ul> */}
                           </div>
-                          <div className="grid grid-cols-1  gap-4">
+                          <div className="grid grid-cols-1 gap-4">
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-right mr-4">Full Name<span className="text-red-500">*</span></span>
+                              <span className="w-48 font-semibold text-left mr-4">Student Name</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <Input
-                                  id="name"
-                                  value={userDetails.name}
-                                  onChange={(e) => handleInputChange("name", e.target.value)}
-                                  placeholder="Enter your full name"
-                                  className="min-w-[180px] flex-1"
-                                />
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, x: p.nameCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, x: p.nameCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, y: p.nameCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, nameCoordinates: { ...p.nameCoordinates, y: p.nameCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                                <span>{userDetails?.name || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-right mr-4">Course<span className="text-red-500">*</span></span>
-                              
+                              <span className="w-48 font-semibold text-left mr-4">Course</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <Input
-                                  id="course"
-                                  value={userDetails.courseName || ""}
-                                  onChange={(e) => handleInputChange("courseName", e.target.value)}
-                                  placeholder="Enter your course"
-                                  className="min-w-[180px] flex-1"
-                                />
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, x: p.courseCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, x: p.courseCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, y: p.courseCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, courseCoordinates: { ...p.courseCoordinates, y: p.courseCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                                <span>{userDetails?.courseName || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-right mr-4">UID<span className="text-red-500">*</span></span>
+                              <span className="w-48 font-semibold text-left mr-4">Shift</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <Input
-                                  id="uid"
-                                  value={userDetails.codeNumber || ""}
-                                  onChange={(e) => handleInputChange("codeNumber", e.target.value)}
-                                  placeholder="Enter your UID"
-                                  className="min-w-[180px] flex-1"
-                                />
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, x: p.uidCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, x: p.uidCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, y: p.uidCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, uidCoordinates: { ...p.uidCoordinates, y: p.uidCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                                <span>{userDetails?.shiftName || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-right mr-4">Mobile Number<span className="text-red-500">*</span></span>
+                              <span className="w-48 font-semibold text-left mr-4">Mobile No.</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <Input
-                                  id="mobile"
-                                  value={userDetails.emrgnResidentPhNo || ""}
-                                  onChange={(e) => handleInputChange("emrgnResidentPhNo", e.target.value)}
-                                  placeholder="Enter your mobile number"
-                                  className="min-w-[180px] flex-1"
-                                />
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, x: p.mobileCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, x: p.mobileCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, y: p.mobileCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, mobileCoordinates: { ...p.mobileCoordinates, y: p.mobileCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                                <span>{userDetails?.contactNo || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-right mr-4">Blood Group<span className="text-red-500">*</span></span>
+                              <span className="w-48 font-semibold text-left mr-4">Blood Group</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <Input
-                                  id="bloodGroup"
-                                  value={userDetails.bloodGroupName || ""}
-                                  onChange={(e) => handleInputChange("bloodGroupName", e.target.value)}
-                                  placeholder="Enter your blood group"
-                                  className="min-w-[180px] flex-1"
-                                />
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, x: p.bloodGroupCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, x: p.bloodGroupCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, y: p.bloodGroupCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, bloodGroupCoordinates: { ...p.bloodGroupCoordinates, y: p.bloodGroupCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                                <span>{userDetails?.bloodGroupName || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-right mr-4">Sports Quota</span>
+                              <span className="w-48 font-semibold text-left mr-4">Sports Quota</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <Input
-                                  id="securityQ"
-                                  value={userDetails.securityQ || ""}
-                                  onChange={(e) => handleInputChange("securityQ", e.target.value)}
-                                  placeholder=""
-                                  className="min-w-[180px] flex-1"
-                                />
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, x: p.sportsQuotaCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, x: p.sportsQuotaCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, y: p.sportsQuotaCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, sportsQuotaCoordinates: { ...p.sportsQuotaCoordinates, y: p.sportsQuotaCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                                <span>{userDetails?.securityQ || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-right mr-4">Valid Till Date</span>
+                              <span className="w-48 font-semibold text-left mr-4">Section</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <Input
-                                  id="validTillDate"
-                                  value={validTillDate}
-                                  onChange={e => {
-                                    // Allow only digits and dashes, and auto-insert dashes
-                                    let v = e.target.value.replace(/[^0-9-]/g, "");
-                                    if (v.length === 2 || v.length === 5) {
-                                      if (validTillDate.length < v.length) v += "-";
-                                    }
-                                    setValidTillDate(v.slice(0, 10));
-                                  }}
-                                  placeholder="dd-mm-yyyy"
-                                  pattern="^\d{2}-\d{2}-\d{4}$"
-                                  className="min-w-[180px] flex-1"
-                                  inputMode="numeric"
-                                  maxLength={10}
-                                />
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, x: p.validTillDateCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, x: p.validTillDateCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, y: p.validTillDateCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, validTillDateCoordinates: { ...p.validTillDateCoordinates, y: p.validTillDateCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
+                                <span>{userDetails?.sectionName || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-right mr-4">QR Code</span>
+                              <span className="w-48 font-semibold text-left mr-4">Class Roll No.</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <span className="text-xs text-gray-500">X:</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, x: p.qrcodeCoordinates.x - 1 } }))}><ChevronLeft className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, x: p.qrcodeCoordinates.x + 1 } }))}><ChevronRight className="w-4 h-4" /></Button>
-                                <span className="text-xs text-gray-500 ml-2">Y:</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, y: p.qrcodeCoordinates.y - 1 } }))}><ChevronUp className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(p => ({ ...p, qrcodeCoordinates: { ...p.qrcodeCoordinates, y: p.qrcodeCoordinates.y + 1 } }))}><ChevronDown className="w-4 h-4" /></Button>
-                                <span className="text-xs text-gray-500 ml-2">Size:</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(prev => ({...prev, qrcodeSize: Math.max(20, prev.qrcodeSize - 5)}))}>-</Button>
-                                <span className="px-2">{positions.qrcodeSize}</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(prev => ({...prev, qrcodeSize: Math.min(300, prev.qrcodeSize + 5)}))}>+</Button>
+                                <span>{userDetails?.rollNumber || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-right mr-4">Photo</span>
+                              <span className="w-48 font-semibold text-left mr-4">UID</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <span className="text-xs text-gray-500">X:</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, x: r.photoDimension.x - 1} }))}><ChevronLeft className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, x: r.photoDimension.x + 1} }))}><ChevronRight className="w-4 h-4" /></Button>
-                                <span className="text-xs text-gray-500 ml-2">Y:</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, y: r.photoDimension.y - 1} }))}><ChevronUp className="w-4 h-4" /></Button>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, y: r.photoDimension.y + 1} }))}><ChevronDown className="w-4 h-4" /></Button>
-                                <span className="text-xs text-gray-500 ml-2">Width:</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension:{ ...r.photoDimension, width: Math.max(20, r.photoDimension.width - 5)} }))}>-</Button>
-                                <span className="px-2">{positions.photoDimension.width}</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, width: Math.min(400, r.photoDimension.width + 5)} }))}>+</Button>
-                                <span className="text-xs text-gray-500 ml-2">Height:</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, height: Math.max(20, r.photoDimension.height - 5)} }))}>-</Button>
-                                <span className="px-2">{positions.photoDimension.height}</span>
-                                <Button size="icon" variant="outline" onClick={() => setPositions(r => ({ ...r, photoDimension: {...r.photoDimension, height: Math.min(600, r.photoDimension.height + 5)} }))}>+</Button>
+                                <span>{userDetails?.codeNumber || '-'}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="w-48 font-semibold text-left mr-4">RFID</span>
+                              <div className="flex flex-1 items-center gap-1">
+                                <span>{userDetails?.rfidno || '-'}</span>
                               </div>
                             </div>
                           </div>
@@ -895,6 +903,8 @@ export default function Page() {
                                   width={400}
                                   height={300}
                                   className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                                  onContextMenu={e => e.preventDefault()}
+                                  draggable={false}
                                 />
                               ) : (
                                 <p className="text-gray-500 text-center">Your ID card will appear here after generation</p>
@@ -1073,22 +1083,16 @@ export default function Page() {
                           }}
                         />
                       </div>
-                      {/* Face detection status and button below webcam */}
                       <div className="w-full flex flex-col items-center" style={{ marginBottom: 24 }}>
-                        <div className="text-center text-sm text-gray-600" style={{ marginBottom: 12 }}>
-                          {modelsLoaded ? (
-                            numFaces === 1 ? "One face detected" : numFaces > 1 ? "Multiple faces detected" : "No face detected"
-                          ) : "Loading face detection..."}
-                        </div>
                         <Button
                           onClick={capture}
                           className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                           size="lg"
-                          disabled={!modelsLoaded || numFaces !== 1}
+                          disabled={!modelsLoaded}
                           style={{ maxWidth: 400 }}
                         >
                           <Camera className="w-4 h-4 mr-2" />
-                          {modelsLoaded ? (numFaces === 1 ? "Capture Photo" : numFaces > 1 ? "Only one face allowed" : "No face detected") : "Loading..."}
+                          {modelsLoaded ? "Capture Photo" : "Loading..."}
                         </Button>
                       </div>
                     </DialogContent>
@@ -1102,7 +1106,15 @@ export default function Page() {
                     <DialogContent className="h-[95vh] overflow-auto pt-10">
                       <DialogTitle className="sr-only">Zoomed ID Card Preview</DialogTitle>
                       {zoomImg && (
-                        <NextImage src={zoomImg} alt="Zoomed ID Card" width={800} height={600} className="w-full h-auto object-contain rounded-lg border" />
+                        <NextImage
+                          src={zoomImg}
+                          alt="Zoomed ID Card"
+                          width={800}
+                          height={600}
+                          className="w-full h-auto object-contain rounded-lg border"
+                          onContextMenu={e => e.preventDefault()}
+                          draggable={false}
+                        />
                       )}
                     </DialogContent>
                   </Dialog>
