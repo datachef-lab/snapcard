@@ -198,7 +198,23 @@ export default function ReportsPage() {
     };
   }, [currentUser.email, currentUser.name, currentUser, currentUser.type, setActiveUsers]);
 
-  // Fetch stats and hourly on mount and when year/date changes
+  // Fetch dates when admissionYear changes
+  useEffect(() => {
+    if (!admissionYear) return;
+    fetchDatesByAdmissionYear(admissionYear).then(data => {
+      const formattedDates = data.map(ele =>
+        format(new Date(ele.date), "dd-MM-yyyy")
+      );
+      setDates(formattedDates);
+      // Only set the most recent date if none is selected or the current date is not in the list
+      if (!date || !formattedDates.includes(date)) {
+        setDate(formattedDates[formattedDates.length - 1]);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [admissionYear]);
+
+  // Fetch stats when both admissionYear and date are set
   useEffect(() => {
     if (!admissionYear || !date) return;
     async function fetchStats() {
@@ -210,72 +226,6 @@ export default function ReportsPage() {
       }
     }
     fetchStats();
-  }, [admissionYear, date]);
-
-  
-
-useEffect(() => {
-  if (!admissionYear) return;
-
-  fetchDatesByAdmissionYear(admissionYear).then(data => {
-    const formattedDates = data.map(ele =>
-      format(new Date(ele.date), "dd-MM-yyyy")
-    );
-    setDates(formattedDates);
-    // Only set the most recent date if none is selected or the current date is not in the list
-    if (!date || !formattedDates.includes(date)) {
-      const newDate = formattedDates[formattedDates.length - 1];
-      if (date !== newDate) {
-        setDate(newDate);
-      }
-    }
-  });
-}, [admissionYear, date]);
-
-
-  // Subscribe to Pusher for real-time stats updates
-  useEffect(() => {
-    // Function to fetch stats and hourly stats from your API
-    async function fetchStatsAndHourly() {
-      if (!admissionYear || !date) return;
-      const res = await fetch(`${BASE_URL}/api/reports/stats?year=${admissionYear}&date=${date}&t=${Date.now()}`); // cache-busting param
-      const data = await res.json();
-      console.log('[ReportsPage] Fetched stats:', data);
-      if (data.success) {
-        setStats(data.stats);
-        setHourlyStats(data.hourly);
-      }
-    }
-    async function fetchDates() {
-      if (!admissionYear) return;
-      const data = await fetchDatesByAdmissionYear(admissionYear);
-      const dateStrings = data.map(d => {
-        if (typeof d.date === 'string') return d.date;
-        if (Object.prototype.toString.call(d.date) === '[object Date]') return (d.date as Date).toISOString().slice(0, 10);
-        return String(d.date);
-      });
-      if (Array.isArray(dateStrings) && dateStrings.length > 0) {
-        setDates(dateStrings);
-        // Only set the most recent date if none is selected or the current date is not in the list
-        if (!date || !dateStrings.includes(date)) {
-          setDate(dateStrings[dateStrings.length - 1]);
-        }
-      }
-    }
-    fetchStatsAndHourly();
-    fetchDates();
-    const channel = pusherClient.subscribe('reports');
-    const handleStatsUpdate = () => {
-      console.log('[ReportsPage] Received stats-update event');
-      fetchStatsAndHourly();
-      fetchDates();
-      setRemountKey(prev => prev + 1); // force remount
-    };
-    channel.bind('stats-update', handleStatsUpdate);
-    return () => {
-      channel.unbind('stats-update', handleStatsUpdate);
-      pusherClient.unsubscribe('reports');
-    };
   }, [admissionYear, date]);
 
   useEffect(() => {
