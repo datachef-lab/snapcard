@@ -49,7 +49,7 @@ export default function Page() {
     qrcodeCoordinates: { x: 375, y: 656 },
     validTillDateCoordinates: { x: 129, y: 845 },
     admissionYear: "",
-    photoDimension: {},
+    photoDimension: { x: 240, y: 280, width: 200, height: 250 }, // <-- default values
     qrcodeSize: 190,
   });
   // const [qrcodeSize, setQrcodeSize] = useState(190);
@@ -89,14 +89,16 @@ export default function Page() {
 
   useEffect(() => {
     if (userDetails && templates.length > 0) {
-      const tmpt =templates.find(ele => ele.admissionYear == (userDetails).academicYear);
-      if (tmpt) {
-        setSelectedTemplate(tmpt);
-        setPositions(tmpt);
+      // const tmpt =templates.find(ele => ele.admissionYear == (userDetails).academicYear);
+      // if (tmpt) {
+        setSelectedTemplate(templates[0]);
+        setPositions(templates[0]);
+        // setQrcodeSize(templates[0].qrcodeSize);
+        // setPhotoRect(templates[0].photoDimension);
 
-        setPreviewUrl(`${BASE_PATH}/api/id-card-template/${tmpt.id}`);
-        setFile(null);
-      }
+        setPreviewUrl(`${BASE_PATH}/api/id-card-template/${templates[0].id}`);
+        // setFile(null);
+      // }
     }
   }, [userDetails, templates, BASE_PATH, setSelectedTemplate, setPositions, setPreviewUrl, setFile]);
 
@@ -147,8 +149,8 @@ export default function Page() {
         setUserDetails(null);
         setNotFound(true);
       } finally {
-        setCapturedImage(null)
-        setGeneratedCard(null)
+        // setCapturedImage(null)
+        // setGeneratedCard(null)
         setLoading(false);
       }
     };
@@ -180,11 +182,27 @@ export default function Page() {
   }, [webcamRef])
 
   const generateIDCard = useCallback(async () => {
-    if (!capturedImage || !canvasRef.current || !previewUrl) return
+    console.log("Generating ID card")
+    console.log("Captured image:", capturedImage)
+    console.log("Canvas:", canvasRef.current)
+    console.log("Preview URL:", previewUrl)
+    if (!capturedImage || !canvasRef.current || !previewUrl) {
+      console.log("No captured image or canvas or preview URL")
+      return;
+    }
+
+    // Guard for photoDimension
+    if (!positions.photoDimension || positions.photoDimension.x === undefined || positions.photoDimension.y === undefined || positions.photoDimension.width === undefined || positions.photoDimension.height === undefined) {
+      console.log("Invalid photoDimension", positions.photoDimension);
+      return;
+    }
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext("2d")
-    if (!ctx) return
+    if (!ctx) {
+      console.log("No context")
+      return;
+    }
 
     // Set canvas dimensions to match the clean template
     canvas.width = 600
@@ -618,7 +636,7 @@ export default function Page() {
                         </div>
                         <div className="grid grid-cols-1  gap-4">
                           <div className="flex items-center">
-                            <span className="w-48 font-semibold text-right mr-4">Full Name</span>
+                            <span className="w-48 font-semibold text-right mr-4">Full Name<span className="text-red-500">*</span></span>
                             <div className="flex flex-1 items-center gap-1">
                               <Input
                                 id="name"
@@ -634,7 +652,8 @@ export default function Page() {
                             </div>
                           </div>
                           <div className="flex items-center">
-                            <span className="w-48 font-semibold text-right mr-4">Course</span>
+                            <span className="w-48 font-semibold text-right mr-4">Course<span className="text-red-500">*</span></span>
+                            
                             <div className="flex flex-1 items-center gap-1">
                               <Input
                                 id="course"
@@ -650,7 +669,7 @@ export default function Page() {
                             </div>
                           </div>
                           <div className="flex items-center">
-                            <span className="w-48 font-semibold text-right mr-4">UID</span>
+                            <span className="w-48 font-semibold text-right mr-4">UID<span className="text-red-500">*</span></span>
                             <div className="flex flex-1 items-center gap-1">
                               <Input
                                 id="uid"
@@ -666,7 +685,7 @@ export default function Page() {
                             </div>
                           </div>
                           <div className="flex items-center">
-                            <span className="w-48 font-semibold text-right mr-4">Mobile Number</span>
+                            <span className="w-48 font-semibold text-right mr-4">Mobile Number<span className="text-red-500">*</span></span>
                             <div className="flex flex-1 items-center gap-1">
                               <Input
                                 id="mobile"
@@ -682,7 +701,7 @@ export default function Page() {
                             </div>
                           </div>
                           <div className="flex items-center">
-                            <span className="w-48 font-semibold text-right mr-4">Blood Group</span>
+                            <span className="w-48 font-semibold text-right mr-4">Blood Group<span className="text-red-500">*</span></span>
                             <div className="flex flex-1 items-center gap-1">
                               <Input
                                 id="bloodGroup"
