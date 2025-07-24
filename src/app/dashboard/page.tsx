@@ -373,7 +373,7 @@ export default function Page() {
         }
 
         // SecurityQ (Security Question/Answer)
-        if (userDetails && userDetails.securityQ) {
+        if (userDetails && userDetails.quotatype && userDetails.quotatype.toLowerCase().includes("sports")) {
           ctx.font = "bold 24px Arial"
           ctx.textAlign = "left"
           ctx.fillText(String(userDetails.quotatype), positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
@@ -837,9 +837,9 @@ export default function Page() {
                               </div>
                             </div>
                             <div className="flex items-center">
-                              <span className="w-48 font-semibold text-left mr-4">Sports Quota</span>
+                              <span className="w-48 font-semibold text-left mr-4">Quota Type</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <span>{userDetails?.securityQ || '-'}</span>
+                                <span>{userDetails?.quotatype || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">

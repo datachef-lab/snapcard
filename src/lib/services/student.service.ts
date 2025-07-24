@@ -177,7 +177,7 @@ export async function findStudents({
 }> {
     const offset = (page - 1) * size;
 
-    const whereConditions: string[] = ["(ay.id IS NULL OR ay.id >= 17)"];
+    const whereConditions: string[] = ["(ay.id >= 17)"];
     const params: (string | number)[] = [];
 
     if (uid) {
@@ -204,92 +204,71 @@ export async function findStudents({
     // ---- PAGINATED SELECT ----
     const sql = `
         SELECT
-            spd.id,
-            spd.name,
-            spd.codeNumber,
-            spd.oldCodeNumber,
-            spd.rfidno,
-            spd.securityQ,
-            spd.active,
-            spd.bloodGroup AS bloodGroupId,
-            bg.name AS bloodGroupName,
+    spd.id,
+    spd.name,
+    spd.codeNumber,
+    spd.oldCodeNumber,
+    spd.rfidno,
+    spd.securityQ,
+    spd.active,
+    spd.bloodGroup AS bloodGroupId,
+    bg.name AS bloodGroupName,
 
-            spd.phoneMobileNo,
-            spd.emrgnResidentPhNo,
-            spd.emrgnFatherMobno,
-            spd.emrgnMotherMobNo,
-            spd.coursetype,
+    spd.phoneMobileNo,
+    spd.emrgnResidentPhNo,
+    spd.emrgnFatherMobno,
+    spd.emrgnMotherMobNo,
+    spd.coursetype,
 
-            spm.courseId,
-            c.courseName,
+    h.courseId,
+    c.courseName,
 
-            spm.sectionId,
-            sec.sectionName,
+    h.sectionId,
+    sec.sectionName,
 
-            spm.shiftId,
-            sh.shiftName,
+    h.shiftId,
+    sh.shiftName,
 
-            spm.sessionId,
-            cs.sessionName,
+    h.sessionId,
+    cs.sessionName,
 
-            ay.accademicYearName AS academicYear,
+    ay.accademicYearName AS academicYear,
 
-            spd.quotatype,
-            spd.rollNumber,
-            spd.contactNo
+    spd.quotatype,
+    spd.rollNumber,
+    spd.contactNo
 
-        FROM studentpersonaldetails spd
+FROM studentpersonaldetails spd
 
-        LEFT JOIN (
-            SELECT s1.*
-            FROM studentpaperlinkingstudentlist s1
-            JOIN (
-                SELECT studentId, MAX(id) AS max_id
-                FROM studentpaperlinkingstudentlist
-                GROUP BY studentId
-            ) AS latest ON latest.studentId = s1.studentId AND latest.max_id = s1.id
-        ) AS spls ON spls.studentId = spd.id
+LEFT JOIN historicalrecord h ON h.parent_id = spd.id AND h.present = true
 
-        LEFT JOIN studentpaperlinkingpaperlist splp ON splp.id = spls.parent_id
-        LEFT JOIN studentpaperlinkingmain spm ON spm.id = splp.parent_id    
+LEFT JOIN accademicyear ay ON ay.sessionId = h.sessionId
+LEFT JOIN course c ON c.id = h.courseId
+LEFT JOIN shift sh ON sh.id = h.shiftId
+LEFT JOIN section sec ON sec.id = h.sectionId
+LEFT JOIN currentsessionmaster cs ON cs.id = h.sessionId
+LEFT JOIN bloodgroup bg ON bg.id = spd.bloodGroup
 
-        LEFT JOIN accademicyear ay ON ay.sessionId = spm.sessionId
-        LEFT JOIN course c ON c.id = spm.courseId
-        LEFT JOIN shift sh ON sh.id = spm.shiftId
-        LEFT JOIN section sec ON sec.id = spm.sectionId
-        LEFT JOIN currentsessionmaster cs ON cs.id = spm.sessionId
-        LEFT JOIN bloodgroup bg ON bg.id = spd.bloodGroup
+${whereClause}
 
-        ${whereClause}
-        ORDER BY cs.id DESC
-        LIMIT ?
-        OFFSET ?;
+ORDER BY cs.id DESC
+LIMIT ? OFFSET ?;
     `;
 
     const countSql = `
         SELECT COUNT(*) AS total
-        FROM studentpersonaldetails spd
+FROM studentpersonaldetails spd
 
-        LEFT JOIN (
-            SELECT s1.*
-            FROM studentpaperlinkingstudentlist s1
-            JOIN (
-                SELECT studentId, MAX(id) AS max_id
-                FROM studentpaperlinkingstudentlist
-                GROUP BY studentId
-            ) AS latest ON latest.studentId = s1.studentId AND latest.max_id = s1.id
-        ) AS spls ON spls.studentId = spd.id
+LEFT JOIN historicalrecord h ON h.parent_id = spd.id AND h.present = true
 
-        LEFT JOIN studentpaperlinkingpaperlist splp ON splp.id = spls.parent_id
-        LEFT JOIN studentpaperlinkingmain spm ON spm.id = splp.parent_id
-        LEFT JOIN accademicyear ay ON ay.sessionId = spm.sessionId 
-        LEFT JOIN course c ON c.id = spm.courseId
-        LEFT JOIN shift sh ON sh.id = spm.shiftId
-        LEFT JOIN section sec ON sec.id = spm.sectionId
-        LEFT JOIN currentsessionmaster cs ON cs.id = spm.sessionId
-        LEFT JOIN bloodgroup bg ON bg.id = spd.bloodGroup
+LEFT JOIN accademicyear ay ON ay.sessionId = h.sessionId 
+LEFT JOIN course c ON c.id = h.courseId
+LEFT JOIN shift sh ON sh.id = h.shiftId
+LEFT JOIN section sec ON sec.id = h.sectionId
+LEFT JOIN currentsessionmaster cs ON cs.id = h.sessionId
+LEFT JOIN bloodgroup bg ON bg.id = spd.bloodGroup
 
-        ${whereClause};
+${whereClause};
     `;
 
     const finalParams = [...params, size, offset];

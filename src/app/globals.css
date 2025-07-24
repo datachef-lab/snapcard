@@ -120,3 +120,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  .print-button {
+    display: none !important;
+  }
+  .id-card-print {
+    box-shadow: none !important;
+  }
+}

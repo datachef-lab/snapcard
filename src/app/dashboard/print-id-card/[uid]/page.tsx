@@ -11,6 +11,7 @@ import { useParams } from "next/navigation"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Student } from "@/types"
+import IdCardPreview from "@/components/id-card-preview";
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export default function WebcamIDGenerator() {
@@ -32,6 +33,7 @@ export default function WebcamIDGenerator() {
     mobile: { x: 240, y: 710 },
     bloodGroup: { x: 270, y: 774 },
   });
+  const printRef = useRef<HTMLDivElement>(null);
 
   const params = useParams()
   const uidParam = params?.uid
@@ -429,51 +431,59 @@ export default function WebcamIDGenerator() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                  <div
-                    className="w-full h-[380px] flex items-center justify-center bg-gray-100 rounded-lg cursor-zoom-in"
-                    onClick={() => {
-                      if (!showBack && generatedCard) { setZoomImg(generatedCard); setZoomOpen(true); }
-                      if (showBack) { setZoomImg('/id-card-template-backside.jpeg'); setZoomOpen(true); }
-                    }}
-                  >
-                    {!showBack ? (
-                      generatedCard ? (
-                        <img
-                          src={generatedCard}
-                          alt="Generated ID Card"
-                          className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-                        />
-                      ) : (
-                        <p className="text-gray-500 text-center">Your ID card will appear here after generation</p>
-                      )
-                    ) : (
+                <div
+                  ref={printRef}
+                  className="id-card-print"
+                  style={{ display: showBack ? 'none' : undefined }}
+                >
+                  <IdCardPreview>
+                    {generatedCard ? (
                       <img
-                        src="/id-card-template-backside.jpeg"
-                        alt="ID Card Back"
-                        className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                        src={generatedCard}
+                        alt="Generated ID Card"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }}
                       />
+                    ) : (
+                      <p className="text-gray-500 text-center">Your ID card will appear here after generation</p>
                     )}
-                  </div>
-                  <div className="mt-4">
-                    <Button
-                      onClick={downloadCard}
-                      className={`w-full rounded-lg ${showBack || !generatedCard ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
-                      size="lg"
-                      disabled={showBack || !generatedCard}
-                    >
-                      {(!showBack && generatedCard) ? (
-                        <>
-                        <Download className="w-4 h-4 mr-2" />
-                        Download ID Card
-                        </>
-                      ) : (
-                        <span className="opacity-0">Download ID Card</span>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                  </IdCardPreview>
+                </div>
+                <div
+                  className="w-full h-[380px] flex items-center justify-center bg-gray-100 rounded-lg cursor-zoom-in"
+                  onClick={() => {
+                    if (!showBack && generatedCard) { setZoomImg(generatedCard); setZoomOpen(true); }
+                    if (showBack) { setZoomImg('/id-card-template-backside.jpeg'); setZoomOpen(true); }
+                  }}
+                  style={{ display: showBack ? undefined : 'none' }}
+                >
+                  {showBack && (
+                    <img
+                      src="/id-card-template-backside.jpeg"
+                      alt="ID Card Back"
+                      className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                    />
+                  )}
+                </div>
+                <div className="mt-4">
+                  <Button
+                    onClick={downloadCard}
+                    className={`w-full rounded-lg ${showBack || !generatedCard ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+                    size="lg"
+                    disabled={showBack || !generatedCard}
+                  >
+                    {(!showBack && generatedCard) ? (
+                      <>
+                      <Download className="w-4 h-4 mr-2" />
+                      Download ID Card
+                      </>
+                    ) : (
+                      <span className="opacity-0">Download ID Card</span>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
                   </div>
                 )}
         {/* Webcam Modal */}
