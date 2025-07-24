@@ -232,7 +232,7 @@ export async function findStudents({
             spm.sessionId,
             cs.sessionName,
 
-            ay.accademicYearName AS academicYear
+            ay.accademicYearName AS academicYear,
 
             spd.quotatype,
             spd.rollNumber,
