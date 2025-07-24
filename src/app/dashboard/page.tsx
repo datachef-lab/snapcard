@@ -511,7 +511,7 @@ export default function Page() {
     let isMounted = true;
     const loadModels = async () => {
       try {
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+        await faceapi.nets.tinyFaceDetector.loadFromUri(`${BASE_PATH}/models`);
         if (isMounted) setModelsLoaded(true);
       } catch (err) {
         console.error('Failed to load face-api.js models', err);
