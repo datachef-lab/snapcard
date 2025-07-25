@@ -341,14 +341,14 @@ export default function Page() {
           ctx.beginPath();
           ctx.rect(blueBarWidth, positions.validTillDateCoordinates.y - 20, whiteAreaWidth, 40);
           ctx.clip();
-          ctx.font = "bold 16px Arial";
+          ctx.font = "bold 20px Arial";
           ctx.textAlign = "center";
           ctx.fillText(`Valid Till: ${validTillDate}`, centerX, positions.validTillDateCoordinates.y, whiteAreaWidth);
           ctx.restore();
         }
 
         // Course (left-aligned with yellow arrow)
-        let courseText = userDetails && userDetails.courseName ? `${userDetails.courseName}${userDetails.shiftName ? ` (${userDetails.shiftName})` : ''}` : '';
+        let courseText = userDetails && userDetails.courseName ? `${userDetails.courseName}${userDetails.shiftName ? ` ${userDetails.shiftName}` : ''}` : '';
         if (courseText.toUpperCase().trim().includes("B.A. JOURNALISM AND MASS COMM (H)")) {
           courseText = "B.A. JMC (H)";
         }
@@ -370,7 +370,7 @@ export default function Page() {
         
         if (courseText) {
           const arrowLeftX = 110; // Adjust this value to match the yellow arrow's left edge in the template
-          ctx.font = "bold 24px Arial";
+          ctx.font = "bold 25px Arial";
           ctx.textAlign = "left";
           ctx.fillText(courseText, arrowLeftX, positions.courseCoordinates.y);
         }
@@ -378,7 +378,7 @@ export default function Page() {
         // Mobile (left-aligned with yellow arrow)
         if (userDetails) {
           const arrowLeftX = 110; // Same as above
-          ctx.font = "bold 24px Arial";
+          ctx.font = "bold 25px Arial";
           ctx.textAlign = "left";
           ctx.fillText(`${userDetails.contactNo ?? ''}`, arrowLeftX, positions.mobileCoordinates.y);
         }

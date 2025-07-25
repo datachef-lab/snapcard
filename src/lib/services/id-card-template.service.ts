@@ -1,6 +1,6 @@
 import { IdCardTemplate, idCardTemplateTable } from "../db/schema";
 import { dbPostgres } from "../db";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import fs from "fs/promises";
 import path from "path";
 
@@ -24,7 +24,10 @@ export async function createIdCardTemplate(givenTemplate: IdCardTemplate, templa
 }
 
 export async function getAllIdCardTemplates() {
-    return dbPostgres.select().from(idCardTemplateTable);
+    return dbPostgres
+      .select().from(idCardTemplateTable)
+      .where(eq(idCardTemplateTable.disabled, false))
+      .orderBy(desc(idCardTemplateTable.admissionYear));
 }
 
 export async function getIdCardTemplateById(id: number) {

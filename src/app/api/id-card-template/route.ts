@@ -103,7 +103,12 @@ export async function PUT(req: NextRequest) {
 
 // DELETE: Delete a template by id
 export async function DELETE(req: NextRequest) {
-  const { id } = await req.json();
-  await admissionYearService.deleteIdCardTemplate(id);
+  // Get the id from the query string
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get('id');
+  if (!id) {
+    return NextResponse.json({ success: false, error: "Missing id" }, { status: 400 });
+  }
+  await admissionYearService.deleteIdCardTemplate(Number(id));
   return NextResponse.json({ success: true });
 } 

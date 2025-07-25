@@ -223,7 +223,12 @@ export default function SettingsPage() {
 
   const handleAddSubmit = async () => {
     const formData = new FormData();
-    Object.entries(form).forEach(([key, value]) => {
+    // Ensure qrcodeSize is set
+    const safeForm = { ...form };
+    if (!safeForm.qrcodeSize || isNaN(Number(safeForm.qrcodeSize))) {
+      safeForm.qrcodeSize = 190; // Default value
+    }
+    Object.entries(safeForm).forEach(([key, value]) => {
       formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value ?? ''));
     });
     if (file) formData.append('templateFile', file);
