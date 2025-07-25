@@ -58,7 +58,7 @@ export default function Page() {
   // const [qrcodeSize, setQrcodeSize] = useState(190);
   const [validTillDate, setValidTillDate] = useState("");
   // const [photoRect, setPhotoRect] = useState({ x: 240, y: 280, width: 200, height: 250 });
-  const [issueType, setIssueType] = useState("ISSUED");
+  const issueType = "ISSUED";
   const [remarks, setRemarks] = useState("First card issued");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [viewCardIssueId, setViewCardIssueId] = useState<number | null>(null);
@@ -83,13 +83,7 @@ export default function Page() {
   }, [issueType]);
 
   // Auto-switch type if current selection is disabled
-  useEffect(() => {
-    if (idCardIssues.length === 0 && issueType !== "ISSUED") {
-      setIssueType("ISSUED");
-    } else if (idCardIssues.length > 0 && issueType === "ISSUED") {
-      setIssueType("RENEWED");
-    }
-  }, [idCardIssues.length, issueType]);
+  // (Removed: issueType is now always 'ISSUED')
 
   const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -286,7 +280,7 @@ export default function Page() {
           ctx.beginPath();
           ctx.rect(blueBarWidth, positions.nameCoordinates.y - 40, whiteAreaWidth, 50);
           ctx.clip();
-          ctx.font = "bold 32px Arial";
+          ctx.font = "bold 32px Calibri";
           ctx.textAlign = "center";
           ctx.fillText(userDetails.name.toUpperCase(), centerX, positions.nameCoordinates.y, whiteAreaWidth);
           ctx.restore();
@@ -301,7 +295,7 @@ export default function Page() {
           ctx.beginPath();
           ctx.rect(blueBarWidth, positions.uidCoordinates.y - 20, whiteAreaWidth, 40);
           ctx.clip();
-          ctx.font = "bold 24px Arial";
+          ctx.font = "bold 30px Calibri";
           ctx.textAlign = "center";
           ctx.fillText(`${userDetails.codeNumber}`, centerX, positions.uidCoordinates.y, whiteAreaWidth);
           ctx.restore();
@@ -341,7 +335,7 @@ export default function Page() {
           ctx.beginPath();
           ctx.rect(blueBarWidth, positions.validTillDateCoordinates.y - 20, whiteAreaWidth, 40);
           ctx.clip();
-          ctx.font = "bold 20px Arial";
+          ctx.font = "bold 20px Calibri";
           ctx.textAlign = "center";
           ctx.fillText(`Valid Till: ${validTillDate}`, centerX, positions.validTillDateCoordinates.y, whiteAreaWidth);
           ctx.restore();
@@ -370,7 +364,7 @@ export default function Page() {
         
         if (courseText) {
           const arrowLeftX = 110; // Adjust this value to match the yellow arrow's left edge in the template
-          ctx.font = "bold 25px Arial";
+          ctx.font = "bold 25px Calibri";
           ctx.textAlign = "left";
           ctx.fillText(courseText, arrowLeftX, positions.courseCoordinates.y);
         }
@@ -378,20 +372,20 @@ export default function Page() {
         // Mobile (left-aligned with yellow arrow)
         if (userDetails) {
           const arrowLeftX = 110; // Same as above
-          ctx.font = "bold 25px Arial";
+          ctx.font = "bold 25px Calibri";
           ctx.textAlign = "left";
           ctx.fillText(`${userDetails.contactNo ?? ''}`, arrowLeftX, positions.mobileCoordinates.y);
         }
 
         // Blood Group
         if (userDetails && userDetails.bloodGroupName) {
-          ctx.font = "bold 24px Arial"
+          ctx.font = "bold 24px Calibri"
           ctx.fillText(`${userDetails.bloodGroupName}`, positions.bloodGroupCoordinates.x, positions.bloodGroupCoordinates.y)
         }
 
         // SecurityQ (Security Question/Answer)
         if (userDetails && userDetails.quotatype && userDetails.quotatype.toLowerCase().includes("sports")) {
-          ctx.font = "bold 24px Arial"
+          ctx.font = "bold 24px Calibri"
           ctx.textAlign = "left"
           ctx.fillText("SQ", positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
           ctx.textAlign = "center"
@@ -468,7 +462,7 @@ export default function Page() {
     try {
       // 1. Create new id card issue entry first
       const lastIssueId = idCardIssues.length > 0 ? idCardIssues[0].id : null;
-      const renewedFromId = (issueType === "RENEWED") ? lastIssueId : null;
+      const renewedFromId = null;
       const issueRes = await fetch(`${BASE_PATH}/api/id-card-issue`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -653,9 +647,9 @@ export default function Page() {
   return (
     <>
       <Toaster />
-      <div className="px-4 mt-4 ">
+      <div className="px-4">
 
-        <h2 className="scroll-m-20 py-2 mb-2 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+        <h2 className="scroll-m-20 py-2 mb-2 border-b  text-3xl font-semibold tracking-tight first:mt-0">
           Enter the UID
         </h2>
 
@@ -672,7 +666,7 @@ export default function Page() {
           />
           <Button type="submit" className="h-10 px-6 bg-blue-600 text-white rounded-lg">Load</Button>
         </form>
-        <div className="mt-8">
+        <div className="mt-4">
           {/* {JSON.stringify(userDetails)} */}
           {loading && (
             <div className="flex justify-center items-center h-32">
@@ -773,18 +767,7 @@ export default function Page() {
                           </DialogContent>
                         </Dialog>
                         <CardContent>
-                          <div className="mb-4 p-3 rounded bg-blue-100 text-sm">
-
-                            <div><b>Session:</b> {userDetails.sessionName || "-"}</div>
-                            <div><b>Section:</b> {userDetails.sectionName || "-"}</div>
-                            <div><b>Shift:</b> {userDetails.shiftName || "-"}</div>
-                            {/* <div className="mt-2"><b>Emergency Numbers:</b></div>
-                            <ul className="ml-4 list-disc">
-                              <li>Self: {userDetails.emrgnResidentPhNo || "-"}</li>
-                              <li>Father: {userDetails.emrgnFatherMobno || "-"}</li>
-                              <li>Mother: {userDetails.emrgnMotherMobNo || "-"}</li>
-                            </ul> */}
-                          </div>
+                    
                           <div className="grid grid-cols-1 gap-4">
                             <div className="flex items-center">
                               <span className="w-48 font-semibold text-left mr-4">Student Name</span>
@@ -838,42 +821,68 @@ export default function Page() {
                           </div>
 {/* RFID input form below Personal Details row */}
 <form
-                            className="flex items-center gap-2 mt-4"
-                            onSubmit={async e => {
-                              e.preventDefault();
-                              if (!userDetails?.codeNumber || !userDetails.rfidno) return;
-                              try {
-                                const res = await fetch(`/api/students/update-rfid`, {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ uid: userDetails.codeNumber, rfid: userDetails.rfidno })
-                                });
-                                if (res.ok) {
-                                  const data = await res.json();
-                                  if (data && data.student) {
-                                    setUserDetails({ ...userDetails, rfidno: data.student.rfidno });
-                                    toast.success('RFID updated successfully!');
-                                  } else {
-                                    toast.error('Failed to update RFID.');
-                                  }
-                                } else {
-                                  toast.error('Failed to update RFID.');
-                                }
-                              } catch {
-                                toast.error('Error updating RFID.');
-                              }
-                            }}
-                          >
-                            <label htmlFor="rfid" className="font-semibold">RFID:</label>
-                            <Input
-                              id="rfid"
-                              value={userDetails?.rfidno || ''}
-                              onChange={e => setUserDetails(prev => prev ? { ...prev, rfidno: e.target.value } : prev)}
-                              placeholder="Enter RFID"
-                              className="w-48"
-                            />
-                            <Button type="submit" className="h-9 px-4 bg-blue-600 text-white rounded-lg">Save</Button>
-                          </form>
+  className="flex items-center gap-2 mt-4"
+  onSubmit={async e => {
+    e.preventDefault();
+    if (!userDetails?.codeNumber) return;
+    try {
+      const res = await fetch(`${BASE_PATH}/api/students/update-rfid`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: userDetails.codeNumber, rfid: userDetails.rfidno === '' ? null : userDetails.rfidno })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.student) {
+          setUserDetails({ ...userDetails, rfidno: data.student.rfidno });
+          toast.success('RFID updated successfully!');
+          // Also save the photo after RFID is saved
+          await handleSaveImage();
+          // Fetch id card issues again after saving photo
+          if (userDetails?.id) {
+            fetch(`${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id}`)
+              .then(res => res.json())
+              .then(data => setIdCardIssues(data.data || []));
+          }
+        } else {
+          toast.error('Failed to update RFID.');
+        }
+      } else {
+        toast.error('Failed to update RFID.');
+      }
+    } catch {
+      toast.error('Error updating RFID.');
+    }
+  }}
+>
+  <label htmlFor="rfid" className="font-semibold">RFID:</label>
+  <Input
+    id="rfid"
+    value={userDetails?.rfidno as string}
+    onChange={e => setUserDetails(prev => prev ? { ...prev, rfidno: e.target.value } : prev)}
+    placeholder="Enter RFID"
+    className="w-48"
+  />
+  <Button type="submit" className="h-9 px-4 bg-blue-600 text-white rounded-lg">Save</Button>
+</form>
+
+                          {/* <div className="flex flex-col gap-2 mt-6">
+                    <Button
+                      className="w-full rounded-lg bg-green-500 hover:bg-green-600 shadow text-white"
+                      onClick={handleSaveImage}
+
+                      size="lg"
+                      disabled={!generatedCard || !userDetails.codeNumber || saving}
+                    >
+                      {saving ? "Saving..." : "Save Photo"}
+                    </Button>
+                    {saveStatus === "success" && (
+                      <p className="text-green-600 text-center mt-2">Photo saved successfully!</p>
+                    )}
+                    {saveStatus === "error" && (
+                      <p className="text-red-600 text-center mt-2">Failed to save photo. Try again.</p>
+                    )}
+                  </div> */}
                         </CardContent>
                       </Card>
                     </div>
@@ -964,41 +973,36 @@ export default function Page() {
                             </Button>
                           </div>
                           {/* New section for Type and Remarks */}
-                          <div className="mt-8 max-w-lg mx-auto bg-white rounded-xl shadow p-6">
+                          {/* <div className="mt-8 max-w-lg mx-auto bg-white rounded-xl shadow p-6">
                             <div className="mb-4">
                               <label className="block font-semibold mb-1">Type</label>
                               <div className="flex gap-6">
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id="issued"
-                                    checked={issueType === "ISSUED"}
-                                    onCheckedChange={() => setIssueType("ISSUED")}
-                                    // Always enabled
+                                    checked={true}
+                                    disabled
+                                    
                                   />
                                   <label htmlFor="issued" className="text-sm font-medium">ISSUED</label>
                                 </div>
-                                <div className="flex items-center space-x-2" title={idCardIssues.length === 0 ? "You must issue the first card before you can renew." : ""}>
+                                <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id="renewed"
-                                    checked={issueType === "RENEWED"}
-                                    onCheckedChange={() => setIssueType("RENEWED")}
-                                    disabled={idCardIssues.length === 0}
+                                    checked={false}
+                                    disabled
                                   />
                                   <label htmlFor="renewed" className="text-sm font-medium">RENEWED</label>
                                 </div>
-                                <div className="flex items-center space-x-2" title={idCardIssues.length === 0 ? "You must issue the first card before you can reissue." : ""}>
+                                <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id="reissued"
-                                    checked={issueType === "REISSUED"}
-                                    onCheckedChange={() => setIssueType("REISSUED")}
-                                    disabled={idCardIssues.length === 0}
+                                    checked={false}
+                                    disabled
                                   />
                                   <label htmlFor="reissued" className="text-sm font-medium">REISSUED</label>
                                 </div>
                               </div>
-                              {idCardIssues.length === 0 && (
-                                <div className="text-xs text-gray-500 mt-1">You must issue the first card before you can renew or reissue.</div>
-                              )}
                             </div>
                             <div>
                               <label className="block font-semibold mb-1">Remarks</label>
@@ -1008,28 +1012,12 @@ export default function Page() {
                                 placeholder="Enter remarks"
                               />
                             </div>
-                          </div>
+                          </div> */}
                         </CardContent>
                       </Card>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2 mt-6">
-                    <Button
-                      className="w-full rounded-lg bg-green-500 hover:bg-green-600 shadow text-white"
-                      onClick={handleSaveImage}
-
-                      size="lg"
-                      disabled={!generatedCard || !userDetails.codeNumber || saving}
-                    >
-                      {saving ? "Saving..." : "Save Photo"}
-                    </Button>
-                    {saveStatus === "success" && (
-                      <p className="text-green-600 text-center mt-2">Photo saved successfully!</p>
-                    )}
-                    {saveStatus === "error" && (
-                      <p className="text-red-600 text-center mt-2">Failed to save photo. Try again.</p>
-                    )}
-                  </div>
+                  
                   {/* Webcam Modal */}
                   <Dialog open={showWebcam} onOpenChange={setShowWebcam}>
                     <DialogContent
