@@ -393,7 +393,7 @@ export default function Page() {
         if (userDetails && userDetails.quotatype && userDetails.quotatype.toLowerCase().includes("sports")) {
           ctx.font = "bold 24px Arial"
           ctx.textAlign = "left"
-          ctx.fillText(String(userDetails.quotatype), positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
+          ctx.fillText("SQ", positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
           ctx.textAlign = "center"
         }
 
