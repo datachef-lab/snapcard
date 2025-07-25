@@ -350,7 +350,26 @@ export default function Page() {
         }
 
         // Course (left-aligned with yellow arrow)
-        const courseText = userDetails && userDetails.courseName ? `${userDetails.courseName}${userDetails.shiftName ? ` (${userDetails.shiftName})` : ''}` : '';
+        let courseText = userDetails && userDetails.courseName ? `${userDetails.courseName}${userDetails.shiftName ? ` (${userDetails.shiftName})` : ''}` : '';
+        if (courseText.toUpperCase().trim().includes("B.A. JOURNALISM AND MASS COMM (H)")) {
+          courseText = "B.A. JMC (H)";
+        }
+        if (courseText.toUpperCase().trim().includes("B.A. POLITICAL SCIENCE (H)")) {
+          courseText = "B.A. Pol. Sci. (H)";
+        }
+        if (courseText.toUpperCase().trim().includes("B.SC. COMPUTER SCIENCE (H)")) {
+          courseText = "B.Sc. Comp. Sci. (H)";
+        }
+        else if (courseText.toUpperCase().trim().includes("B.SC. ECONOMICS (H)")) {
+          courseText = "B.Sc. Eco. (H)";
+        }
+        else if (courseText.toUpperCase().trim().includes("B.SC. MATHEMATICS (H)")) {
+          courseText = "B.Sc. Maths. (H)";
+        }
+        else if (courseText.toUpperCase().trim().includes("B.A. SOCIOLOGY (H)")) {
+          courseText = "B.A. Sociology (H)";
+        }
+        
         if (courseText) {
           const arrowLeftX = 110; // Adjust this value to match the yellow arrow's left edge in the template
           ctx.font = "bold 24px Arial";
@@ -695,44 +714,7 @@ export default function Page() {
                               </Button>
                             </div>
                           </CardTitle>
-                          {/* RFID input form below Personal Details row */}
-                          <form
-                            className="flex items-center gap-2 mt-4"
-                            onSubmit={async e => {
-                              e.preventDefault();
-                              if (!userDetails?.codeNumber || !userDetails.rfidno) return;
-                              try {
-                                const res = await fetch(`/api/students/update-rfid`, {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ uid: userDetails.codeNumber, rfid: userDetails.rfidno })
-                                });
-                                if (res.ok) {
-                                  const data = await res.json();
-                                  if (data && data.student) {
-                                    setUserDetails({ ...userDetails, rfidno: data.student.rfidno });
-                                    toast.success('RFID updated successfully!');
-                                  } else {
-                                    toast.error('Failed to update RFID.');
-                                  }
-                                } else {
-                                  toast.error('Failed to update RFID.');
-                                }
-                              } catch (err) {
-                                toast.error('Error updating RFID.');
-                              }
-                            }}
-                          >
-                            <label htmlFor="rfid" className="font-semibold">RFID:</label>
-                            <Input
-                              id="rfid"
-                              value={userDetails?.rfidno || ''}
-                              onChange={e => setUserDetails(prev => prev ? { ...prev, rfidno: e.target.value } : prev)}
-                              placeholder="Enter RFID"
-                              className="w-48"
-                            />
-                            <Button type="submit" className="h-9 px-4 bg-blue-600 text-white rounded-lg">Save</Button>
-                          </form>
+                          
                         </CardHeader>
                         <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
                           <SheetContent side="right">
@@ -854,20 +836,46 @@ export default function Page() {
                                 <span>{userDetails?.rollNumber || '-'}</span>
                               </div>
                             </div>
-                            <div className="flex items-center">
-                              <span className="w-48 font-semibold text-left mr-4">UID</span>
-                              <div className="flex flex-1 items-center gap-1">
-                                <span>{userDetails?.codeNumber || '-'}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center">
-                              <span className="w-48 font-semibold text-left mr-4">RFID</span>
-                              <div className="flex flex-1 items-center gap-1">
-                                <span>{userDetails?.rfidno || '-'}</span>
-                              </div>
-                            </div>
+                           
                           </div>
-
+{/* RFID input form below Personal Details row */}
+<form
+                            className="flex items-center gap-2 mt-4"
+                            onSubmit={async e => {
+                              e.preventDefault();
+                              if (!userDetails?.codeNumber || !userDetails.rfidno) return;
+                              try {
+                                const res = await fetch(`/api/students/update-rfid`, {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ uid: userDetails.codeNumber, rfid: userDetails.rfidno })
+                                });
+                                if (res.ok) {
+                                  const data = await res.json();
+                                  if (data && data.student) {
+                                    setUserDetails({ ...userDetails, rfidno: data.student.rfidno });
+                                    toast.success('RFID updated successfully!');
+                                  } else {
+                                    toast.error('Failed to update RFID.');
+                                  }
+                                } else {
+                                  toast.error('Failed to update RFID.');
+                                }
+                              } catch (err) {
+                                toast.error('Error updating RFID.');
+                              }
+                            }}
+                          >
+                            <label htmlFor="rfid" className="font-semibold">RFID:</label>
+                            <Input
+                              id="rfid"
+                              value={userDetails?.rfidno || ''}
+                              onChange={e => setUserDetails(prev => prev ? { ...prev, rfidno: e.target.value } : prev)}
+                              placeholder="Enter RFID"
+                              className="w-48"
+                            />
+                            <Button type="submit" className="h-9 px-4 bg-blue-600 text-white rounded-lg">Save</Button>
+                          </form>
                         </CardContent>
                       </Card>
                     </div>
