@@ -306,7 +306,7 @@ export default function Page() {
           ctx.beginPath();
           ctx.rect(blueBarWidth, positions.uidCoordinates.y - Math.round(20 * SCALE_Y), whiteAreaWidth, Math.round(40 * SCALE_Y));
           ctx.clip();
-          ctx.font = `bold ${Math.round(32 * SCALE_Y)}px Calibri`;
+          ctx.font = `bold ${Math.round(34 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "center";
           ctx.fillText(`${userDetails.codeNumber}`, centerX, positions.uidCoordinates.y, whiteAreaWidth);
           ctx.restore();
@@ -314,7 +314,7 @@ export default function Page() {
         // Valid Till Date (centered in white area)
         if (validTillDate) {
           const blueBarWidth = Math.round(80 * SCALE_X);
-          const rightMargin = Math.round(22 * SCALE_X);
+          const rightMargin = Math.round(24 * SCALE_X);
           const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
           const centerX = blueBarWidth + whiteAreaWidth / 2;
           ctx.save();
@@ -350,7 +350,7 @@ export default function Page() {
         
         if (courseText) {
           const arrowLeftX = Math.round(110 * SCALE_X); // Adjust this value to match the yellow arrow's left edge in the template
-          ctx.font = `bold ${Math.round(27 * SCALE_Y)}px Calibri`;
+          ctx.font = `bold ${Math.round(29 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "left";
           ctx.fillText(courseText, arrowLeftX, positions.courseCoordinates.y);
         }
@@ -358,20 +358,20 @@ export default function Page() {
         // Mobile (left-aligned with yellow arrow)
         if (userDetails) {
           const arrowLeftX = Math.round(110 * SCALE_X); // Same as above
-          ctx.font = `bold ${Math.round(27 * SCALE_Y)}px Calibri`;
+          ctx.font = `bold ${Math.round(29 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "left";
           ctx.fillText(`${userDetails.contactNo ?? ''}`, arrowLeftX, positions.mobileCoordinates.y);
         }
 
         // Blood Group
         if (userDetails && userDetails.bloodGroupName) {
-          ctx.font = `bold ${Math.round(29 * SCALE_Y)}px Calibri`
+          ctx.font = `bold ${Math.round(31 * SCALE_Y)}px Calibri`
           ctx.fillText(`${userDetails.bloodGroupName}`, positions.bloodGroupCoordinates.x, positions.bloodGroupCoordinates.y)
         }
 
-        // SecurityQ (Security Question/Answer)
+        // Sports Quota
         if (userDetails && userDetails.quotatype && userDetails.quotatype.toLowerCase().includes("sports")) {
-          ctx.font = `bold ${Math.round(29 * SCALE_Y)}px Calibri`
+          ctx.font = `bold ${Math.round(31 * SCALE_Y)}px Calibri`
           ctx.textAlign = "left"
           ctx.fillText("SQ", positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
           ctx.textAlign = "center"
