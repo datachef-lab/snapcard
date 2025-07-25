@@ -291,7 +291,7 @@ export default function Page() {
           ctx.beginPath();
           ctx.rect(blueBarWidth, positions.nameCoordinates.y - Math.round(40 * SCALE_Y), whiteAreaWidth, Math.round(50 * SCALE_Y));
           ctx.clip();
-          ctx.font = `bold ${Math.round(32 * SCALE_Y)}px Calibri`;
+          ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "center";
           ctx.fillText(userDetails.name.toUpperCase(), centerX, positions.nameCoordinates.y, whiteAreaWidth);
           ctx.restore();
