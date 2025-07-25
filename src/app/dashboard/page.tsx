@@ -42,18 +42,27 @@ export default function Page() {
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
+  // Scaling factors for new canvas size (old: 600x900, new: 638x1004)
+  const SCALE_X = 638 / 600;
+  const SCALE_Y = 1004 / 900;
+
   const [positions, setPositions] = useState<IdCardTemplate>({
-    nameCoordinates: { x: 330, y: 580 },
-    courseCoordinates: { x: 323, y: 620 },
-    uidCoordinates: { x: 215, y: 680 },
-    mobileCoordinates: { x: 240, y: 710 },
-    bloodGroupCoordinates: { x: 210, y: 776 },
-    sportsQuotaCoordinates: { x: 270, y: 776 },
-    qrcodeCoordinates: { x: 375, y: 656 },
-    validTillDateCoordinates: { x: 129, y: 845 },
+    nameCoordinates: { x: Math.round(330 * SCALE_X), y: Math.round(580 * SCALE_Y) },
+    courseCoordinates: { x: Math.round(323 * SCALE_X), y: Math.round(620 * SCALE_Y) },
+    uidCoordinates: { x: Math.round(215 * SCALE_X), y: Math.round(680 * SCALE_Y) },
+    mobileCoordinates: { x: Math.round(240 * SCALE_X), y: Math.round(710 * SCALE_Y) },
+    bloodGroupCoordinates: { x: Math.round(210 * SCALE_X), y: Math.round(776 * SCALE_Y) },
+    sportsQuotaCoordinates: { x: Math.round(270 * SCALE_X), y: Math.round(776 * SCALE_Y) },
+    qrcodeCoordinates: { x: Math.round(375 * SCALE_X), y: Math.round(656 * SCALE_Y) },
+    validTillDateCoordinates: { x: Math.round(129 * SCALE_X), y: Math.round(845 * SCALE_Y) },
     admissionYear: "",
-    photoDimension: { x: 240, y: 280, width: 200, height: 250 }, // <-- default values
-    qrcodeSize: 190,
+    photoDimension: {
+      x: Math.round(240 * SCALE_X),
+      y: Math.round(280 * SCALE_Y),
+      width: Math.round(200 * SCALE_X),
+      height: Math.round(250 * SCALE_Y)
+    },
+    qrcodeSize: Math.round(190 * SCALE_X),
   });
   // const [qrcodeSize, setQrcodeSize] = useState(190);
   const [validTillDate, setValidTillDate] = useState("");
@@ -207,9 +216,11 @@ export default function Page() {
       return;
     }
 
-    // Set canvas dimensions to match the clean template
-    canvas.width = 600
-    canvas.height = 900
+    // Set canvas dimensions to match the real-world ID card size at 300 DPI (5.4cm x 8.5cm)
+    // 1 inch = 2.54 cm, so 5.4cm = 2.126in, 8.5cm = 3.346in
+    // 2.126 * 300 = 638px, 3.346 * 300 = 1004px
+    canvas.width = 638;
+    canvas.height = 1004;
 
     // Load the clean template image
     const templateImg = typeof window !== 'undefined' ? new window.Image() : new Image();
@@ -272,38 +283,38 @@ export default function Page() {
 
         // Name
         if (userDetails && userDetails.name) {
-          const blueBarWidth = 80; // width of the blue bar with logo
-          const rightMargin = 20;
+          const blueBarWidth = Math.round(80 * SCALE_X); // width of the blue bar with logo
+          const rightMargin = Math.round(20 * SCALE_X);
           const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
           const centerX = blueBarWidth + whiteAreaWidth / 2;
           ctx.save();
           ctx.beginPath();
-          ctx.rect(blueBarWidth, positions.nameCoordinates.y - 40, whiteAreaWidth, 50);
+          ctx.rect(blueBarWidth, positions.nameCoordinates.y - Math.round(40 * SCALE_Y), whiteAreaWidth, Math.round(50 * SCALE_Y));
           ctx.clip();
-          ctx.font = "bold 32px Calibri";
+          ctx.font = `bold ${Math.round(32 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "center";
           ctx.fillText(userDetails.name.toUpperCase(), centerX, positions.nameCoordinates.y, whiteAreaWidth);
           ctx.restore();
         }
         // UID (centered in white area, with label)
         if (userDetails && userDetails.codeNumber) {
-          const blueBarWidth = 80;
-          const rightMargin = 20;
+          const blueBarWidth = Math.round(80 * SCALE_X);
+          const rightMargin = Math.round(20 * SCALE_X);
           const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
           const centerX = blueBarWidth + whiteAreaWidth / 2;
           ctx.save();
           ctx.beginPath();
-          ctx.rect(blueBarWidth, positions.uidCoordinates.y - 20, whiteAreaWidth, 40);
+          ctx.rect(blueBarWidth, positions.uidCoordinates.y - Math.round(20 * SCALE_Y), whiteAreaWidth, Math.round(40 * SCALE_Y));
           ctx.clip();
-          ctx.font = "bold 30px Calibri";
+          ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "center";
           ctx.fillText(`${userDetails.codeNumber}`, centerX, positions.uidCoordinates.y, whiteAreaWidth);
           ctx.restore();
         }
         // Captured Photo (centered in white area)
         if (capturedImage && canvas && ctx) {
-          const blueBarWidth = 80;
-          const rightMargin = 20;
+          const blueBarWidth = Math.round(80 * SCALE_X);
+          const rightMargin = Math.round(20 * SCALE_X);
           const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
           const photoWidth = positions.photoDimension.width;
           const photoHeight = positions.photoDimension.height;
@@ -327,15 +338,15 @@ export default function Page() {
         }
         // Valid Till Date (centered in white area)
         if (validTillDate) {
-          const blueBarWidth = 80;
-          const rightMargin = 20;
+          const blueBarWidth = Math.round(80 * SCALE_X);
+          const rightMargin = Math.round(20 * SCALE_X);
           const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
           const centerX = blueBarWidth + whiteAreaWidth / 2;
           ctx.save();
           ctx.beginPath();
-          ctx.rect(blueBarWidth, positions.validTillDateCoordinates.y - 20, whiteAreaWidth, 40);
+          ctx.rect(blueBarWidth, positions.validTillDateCoordinates.y - Math.round(20 * SCALE_Y), whiteAreaWidth, Math.round(40 * SCALE_Y));
           ctx.clip();
-          ctx.font = "bold 20px Calibri";
+          ctx.font = `bold ${Math.round(20 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "center";
           ctx.fillText(`Valid Till: ${validTillDate}`, centerX, positions.validTillDateCoordinates.y, whiteAreaWidth);
           ctx.restore();
@@ -363,29 +374,29 @@ export default function Page() {
         }
         
         if (courseText) {
-          const arrowLeftX = 110; // Adjust this value to match the yellow arrow's left edge in the template
-          ctx.font = "bold 25px Calibri";
+          const arrowLeftX = Math.round(110 * SCALE_X); // Adjust this value to match the yellow arrow's left edge in the template
+          ctx.font = `bold ${Math.round(25 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "left";
           ctx.fillText(courseText, arrowLeftX, positions.courseCoordinates.y);
         }
 
         // Mobile (left-aligned with yellow arrow)
         if (userDetails) {
-          const arrowLeftX = 110; // Same as above
-          ctx.font = "bold 25px Calibri";
+          const arrowLeftX = Math.round(110 * SCALE_X); // Same as above
+          ctx.font = `bold ${Math.round(25 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "left";
           ctx.fillText(`${userDetails.contactNo ?? ''}`, arrowLeftX, positions.mobileCoordinates.y);
         }
 
         // Blood Group
         if (userDetails && userDetails.bloodGroupName) {
-          ctx.font = "bold 24px Calibri"
+          ctx.font = `bold ${Math.round(24 * SCALE_Y)}px Calibri`
           ctx.fillText(`${userDetails.bloodGroupName}`, positions.bloodGroupCoordinates.x, positions.bloodGroupCoordinates.y)
         }
 
         // SecurityQ (Security Question/Answer)
         if (userDetails && userDetails.quotatype && userDetails.quotatype.toLowerCase().includes("sports")) {
-          ctx.font = "bold 24px Calibri"
+          ctx.font = `bold ${Math.round(24 * SCALE_Y)}px Calibri`
           ctx.textAlign = "left"
           ctx.fillText("SQ", positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
           ctx.textAlign = "center"
@@ -397,7 +408,7 @@ export default function Page() {
             const qrDataUrl = await QRCode.toDataURL(userDetails.codeNumber, { margin: 0, width: positions.qrcodeSize })
             const qrImg = new window.Image()
             qrImg.onload = () => {
-              ctx.drawImage(qrImg, positions.qrcodeCoordinates.x, positions.qrcodeCoordinates.y,positions. qrcodeSize, positions.qrcodeSize)
+              ctx.drawImage(qrImg, positions.qrcodeCoordinates.x, positions.qrcodeCoordinates.y, positions.qrcodeSize, positions.qrcodeSize)
               // Convert canvas to image and set it
               const generatedImageUrl = canvas.toDataURL("image/png", 1.0)
               setGeneratedCard(generatedImageUrl)
@@ -941,14 +952,36 @@ export default function Page() {
                             <Button
                               onClick={() => {
                                 if (!generatedCard || showBack) return;
-                                const printWindow = window.open('', '_blank', 'width=500,height=800');
+                                const CARD_WIDTH_PX = 638;
+                                const CARD_HEIGHT_PX = 1004;
+                                const printWindow = window.open('', '_blank', `width=${CARD_WIDTH_PX},height=${CARD_HEIGHT_PX}`);
                                 printWindow?.document.write(`
                                   <html>
                                     <head>
                                       <title>Print ID Card</title>
                                       <style>
-                                        body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; background: #fff; }
-                                        img { max-width: 100%; max-height: 100vh; }
+                                        @page { margin: 0; }
+                                        html, body {
+                                          width: 100%;
+                                          height: 100%;
+                                          margin: 0;
+                                          padding: 0;
+                                          background: #fff;
+                                        }
+                                        body {
+                                          width: 100vw;
+                                          height: 100vh;
+                                          overflow: hidden;
+                                        }
+                                        img {
+                                          width: 100vw;
+                                          height: 100vh;
+                                          max-width: 100vw;
+                                          max-height: 100vh;
+                                          display: block;
+                                          margin: 0;
+                                          padding: 0;
+                                        }
                                       </style>
                                     </head>
                                     <body>
