@@ -311,31 +311,6 @@ export default function Page() {
           ctx.fillText(`${userDetails.codeNumber}`, centerX, positions.uidCoordinates.y, whiteAreaWidth);
           ctx.restore();
         }
-        // Captured Photo (centered in white area)
-        if (capturedImage && canvas && ctx) {
-          const blueBarWidth = Math.round(80 * SCALE_X);
-          const rightMargin = Math.round(20 * SCALE_X);
-          const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
-          const photoWidth = positions.photoDimension.width;
-          const photoHeight = positions.photoDimension.height;
-          const photoX = blueBarWidth + (whiteAreaWidth - photoWidth) / 2;
-          const photoY = positions.photoDimension.y;
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(photoX, photoY, photoWidth, photoHeight);
-          ctx.clip();
-          const userImg = new window.Image();
-          userImg.src = capturedImage;
-          // Draw synchronously if already loaded, otherwise onload
-          if (userImg.complete) {
-            ctx.drawImage(userImg, photoX, photoY, photoWidth, photoHeight);
-          } else {
-            userImg.onload = function() {
-              ctx.drawImage(userImg, photoX, photoY, photoWidth, photoHeight);
-            };
-          }
-          ctx.restore();
-        }
         // Valid Till Date (centered in white area)
         if (validTillDate) {
           const blueBarWidth = Math.round(80 * SCALE_X);
@@ -355,22 +330,22 @@ export default function Page() {
         // Course (left-aligned with yellow arrow)
         let courseText = userDetails && userDetails.courseName ? `${userDetails.courseName}${userDetails.shiftName ? ` ${userDetails.shiftName}` : ''}` : '';
         if (courseText.toUpperCase().trim().includes("B.A. JOURNALISM AND MASS COMM (H)")) {
-          courseText = "B.A. JMC (H)";
+          courseText = `B.A. JMC (H) ${userDetails?.shiftName ? `${userDetails.shiftName}` : ''}`;
         }
         if (courseText.toUpperCase().trim().includes("B.A. POLITICAL SCIENCE (H)")) {
-          courseText = "B.A. Pol. Sci. (H)";
+          courseText = `B.A. Pol. Sci. (H) ${userDetails?.shiftName ? `${userDetails.shiftName}` : ''}`;  
         }
         if (courseText.toUpperCase().trim().includes("B.SC. COMPUTER SCIENCE (H)")) {
-          courseText = "B.Sc. Comp. Sci. (H)";
+          courseText = `B.Sc. Comp. Sci. (H) ${userDetails?.shiftName ? `${userDetails.shiftName}` : ''}`;
         }
         else if (courseText.toUpperCase().trim().includes("B.SC. ECONOMICS (H)")) {
-          courseText = "B.Sc. Eco. (H)";
+          courseText = `B.Sc. Eco. (H) ${userDetails?.shiftName ? `${userDetails.shiftName}` : ''}`;
         }
         else if (courseText.toUpperCase().trim().includes("B.SC. MATHEMATICS (H)")) {
-          courseText = "B.Sc. Maths. (H)";
-        }
+          courseText = `B.Sc. Maths. (H) ${userDetails?.shiftName ? `${userDetails.shiftName}` : ''}`;
+        } 
         else if (courseText.toUpperCase().trim().includes("B.A. SOCIOLOGY (H)")) {
-          courseText = "B.A. Sociology (H)";
+          courseText = `B.A. Sociology (H) ${userDetails?.shiftName ? `${userDetails.shiftName}` : ''}`;
         }
         
         if (courseText) {
@@ -390,13 +365,13 @@ export default function Page() {
 
         // Blood Group
         if (userDetails && userDetails.bloodGroupName) {
-          ctx.font = `bold ${Math.round(24 * SCALE_Y)}px Calibri`
+          ctx.font = `bold ${Math.round(27 * SCALE_Y)}px Calibri`
           ctx.fillText(`${userDetails.bloodGroupName}`, positions.bloodGroupCoordinates.x, positions.bloodGroupCoordinates.y)
         }
 
         // SecurityQ (Security Question/Answer)
         if (userDetails && userDetails.quotatype && userDetails.quotatype.toLowerCase().includes("sports")) {
-          ctx.font = `bold ${Math.round(24 * SCALE_Y)}px Calibri`
+          ctx.font = `bold ${Math.round(27 * SCALE_Y)}px Calibri`
           ctx.textAlign = "left"
           ctx.fillText("SQ", positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
           ctx.textAlign = "center"
