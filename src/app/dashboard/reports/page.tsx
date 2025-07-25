@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Download as DownloadIcon } from 'lucide-react';
 import { User, IdCard, Clock } from 'lucide-react';
-import { pusherClient } from '@/lib/pusher-client';
+// import { pusherClient } from '@/lib/pusher-client';
 import Pusher from 'pusher-js';
 import { useAuth } from '@/hooks/use-auth';
 import { fetchAdmissionYears, fetchDatesByAdmissionYear } from './action';
@@ -134,7 +134,7 @@ export default function ReportsPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [hourlyStats, setHourlyStats] = useState<HourlyStat[]>([]);
   const  setActiveUsers = useState<User[]>([])[1];
-  const [remountKey, setRemountKey] = useState(0);
+  const [remountKey] = useState(0);
   const [downloadingHour, setDownloadingHour] = useState<string | null>(null);
 
   useEffect(() => {

@@ -7,7 +7,7 @@ import Webcam from "react-webcam"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Camera, User, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react"
+import { Camera, User } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { IdCardIssue, Student } from "@/types"
@@ -21,8 +21,6 @@ import NextImage from 'next/image';
 import * as faceapi from 'face-api.js';
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
-import { updateRfid } from '@/lib/services/student.service';
-
 
 export default function Page() {
   // const {user} = useAuth();
@@ -73,8 +71,8 @@ export default function Page() {
   const [notFound, setNotFound] = useState(false);
   const setFile = useState<File | null>(null)[1];
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [faceDetected, setFaceDetected] = useState(false); // For face detection
-  const [numFaces, setNumFaces] = useState(0); // For face detection
+  const setFaceDetected = useState(false)[1]; // For face detection
+  const setNumFaces = useState(0)[1]; // For face detection
   const [modelsLoaded, setModelsLoaded] = useState(false); // Face-api.js models
 
   // Update remarks when issueType changes
@@ -456,12 +454,12 @@ export default function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userDetails, capturedImage, positions, positions.qrcodeSize, validTillDate, positions.photoDimension]);
 
-  const handleInputChange = (field: keyof Student, value: string) => {
-    setUserDetails((prev) => {
-      if (!prev) return null;
-      return { ...prev, [field]: value };
-    });
-  }
+//   const handleInputChange = (field: keyof Student, value: string) => {
+//     setUserDetails((prev) => {
+//       if (!prev) return null;
+//       return { ...prev, [field]: value };
+//     });
+//   }
 
   const handleSaveImage = async () => {
     if (!generatedCard || !userDetails!.codeNumber) return;
@@ -597,7 +595,7 @@ export default function Page() {
     };
     loadModels();
     return () => { isMounted = false; setModelsLoaded(false); };
-  }, [showWebcam]);
+  }, [showWebcam, BASE_PATH]);
 
   // Face detection loop
   useEffect(() => {
@@ -649,7 +647,7 @@ export default function Page() {
     };
     const intervalId = setInterval(detect, 400); // Check every 400ms
     return () => clearInterval(intervalId);
-  }, [showWebcam, modelsLoaded]);
+  }, [showWebcam, modelsLoaded, setNumFaces, setFaceDetected]);
 
 
   return (
@@ -861,7 +859,7 @@ export default function Page() {
                                 } else {
                                   toast.error('Failed to update RFID.');
                                 }
-                              } catch (err) {
+                              } catch {
                                 toast.error('Error updating RFID.');
                               }
                             }}

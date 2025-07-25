@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react'
 
-const IdCardPreview = forwardRef<HTMLDivElement, React.PropsWithChildren<{}>>(function IdCardPreview(props, ref) {
+const IdCardPreview = forwardRef<HTMLDivElement, React.PropsWithChildren<unknown>>(function IdCardPreview(props, ref) {
   return (
     <div
       ref={ref}
