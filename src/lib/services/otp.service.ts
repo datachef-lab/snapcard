@@ -49,7 +49,7 @@ export async function createOtp(text: string) {
         await sendWhatsAppMessage(user.phone, [code], "logincode");
     } catch (error) {
         // If notification fails, delete the OTP and return error
-        await deleteOtp(result[0].id);
+        // await deleteOtp(result[0].id);
         console.error("Failed to send OTP notification:", error);
         return { success: false, message: "Failed to send OTP notification" };
     }
