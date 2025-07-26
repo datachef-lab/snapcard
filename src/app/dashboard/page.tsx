@@ -321,7 +321,7 @@ export default function Page() {
           ctx.beginPath();
           ctx.rect(blueBarWidth, positions.validTillDateCoordinates.y - Math.round(20 * SCALE_Y), whiteAreaWidth, Math.round(40 * SCALE_Y));
           ctx.clip();
-          ctx.font = `bold ${Math.round(20 * SCALE_Y)}px Calibri`;
+          ctx.font = `bold ${Math.round(21 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "center";
           ctx.fillText(`Valid Till: ${validTillDate}`, centerX, positions.validTillDateCoordinates.y, whiteAreaWidth);
           ctx.restore();
@@ -365,13 +365,13 @@ export default function Page() {
 
         // Blood Group
         if (userDetails && userDetails.bloodGroupName) {
-          ctx.font = `bold ${Math.round(29 * SCALE_Y)}px Calibri`
+          ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`
           ctx.fillText(`${userDetails.bloodGroupName}`, positions.bloodGroupCoordinates.x, positions.bloodGroupCoordinates.y)
         }
 
         // Sports Quota
         if (userDetails && userDetails.quotatype && userDetails.quotatype.toLowerCase().includes("sports")) {
-          ctx.font = `bold ${Math.round(29 * SCALE_Y)}px Calibri`
+          ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`
           ctx.textAlign = "left"
           ctx.fillText("SQ", positions.sportsQuotaCoordinates.x, positions.sportsQuotaCoordinates.y)
           ctx.textAlign = "center"
