@@ -109,30 +109,30 @@ export async function findAllOtps() {
 
 export async function verifyOtp(userId: number, code: string) {
     try {
-        // if (!isValidOtpCode(code)) {
-        //     return { success: false, message: "Invalid OTP format" };
-        // }
+        if (!isValidOtpCode(code)) {
+            return { success: false, message: "Invalid OTP format" };
+        }
 
         // Find the OTP
-        // const otp = await findOtpByCode(code);
-        // if (!otp) {
-        //     return { success: false, message: "Invalid OTP code" };
-        // }
+        const otp = await findOtpByCode(code);
+        if (!otp) {
+            return { success: false, message: "Invalid OTP code" };
+        }
 
         // // Check if OTP belongs to the user
-        // if (otp.userId !== userId) {
-        //     return { success: false, message: "Invalid OTP for this user" };
-        // }
+        if (otp.userId != userId) {
+            return { success: false, message: "Invalid OTP for this user" };
+        }
 
         // Check if OTP is expired
-        // if (otp.expiresAt < new Date()) {
-        //     // Delete expired OTP
-        //     await deleteOtp(otp.id);
-        //     return { success: false, message: "OTP has expired" };
-        // }
+        if (otp.expiresAt < new Date()) {
+            // Delete expired OTP
+            await deleteOtp(otp.id);
+            return { success: false, message: "OTP has expired" };
+        }
 
         // Delete the OTP after successful verification
-        // await deleteOtp(otp.id);
+        await deleteOtp(otp.id);
 
         return { success: true, message: "OTP verified successfully" };
     } catch (error) {

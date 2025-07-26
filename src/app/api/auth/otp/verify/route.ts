@@ -39,7 +39,7 @@ export async function POST(request: Request) {
         
         const result = await otpService.verifyOtp(user.id, code);
 
-        if (code !== "123456") {
+        if (!result.success) {
             return NextResponse.json(result, { status: 400 });
         }
 
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
             name: 'accessToken',
             value: tokens.accessToken,
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: process.env.NODE_ENV == 'production',
             sameSite: 'strict',
             maxAge: 15 * 60, // 15 minutes in seconds
             path: '/',
