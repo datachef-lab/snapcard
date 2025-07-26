@@ -360,7 +360,7 @@ export default function Page() {
           const arrowLeftX = Math.round(110 * SCALE_X); // Same as above
           ctx.font = `bold ${Math.round(27 * SCALE_Y)}px Calibri`;
           ctx.textAlign = "left";
-          ctx.fillText(`${userDetails.contactNo ?? ''}`, arrowLeftX, positions.mobileCoordinates.y);
+          ctx.fillText(`${userDetails.emercontactpersonmob ?? ''}`, arrowLeftX, positions.mobileCoordinates.y);
         }
 
         // Blood Group
@@ -776,7 +776,7 @@ export default function Page() {
                             <div className="flex items-center">
                               <span className="w-48 font-semibold text-left mr-4">Mobile No.</span>
                               <div className="flex flex-1 items-center gap-1">
-                                <span>{userDetails?.contactNo || '-'}</span>
+                                <span>{userDetails?.emercontactpersonmob || '-'}</span>
                               </div>
                             </div>
                             <div className="flex items-center">

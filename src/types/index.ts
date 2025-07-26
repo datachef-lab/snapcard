@@ -35,6 +35,7 @@ export interface Student {
     quotatype: string | null;
     rollNumber: string | null;
     contactNo: string | null;
+    emercontactpersonmob: string | null;
 }
 
 export interface IdCardIssue {

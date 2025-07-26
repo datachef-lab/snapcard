@@ -235,6 +235,7 @@ export async function findStudents({
     ay.accademicYearName AS academicYear,
 
     spd.quotatype,
+    spd.emercontactpersonmob,
     spd.rollNumber,
     spd.contactNo
 
