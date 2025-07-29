@@ -15,47 +15,47 @@ export async function fetchDatesByAdmissionYear(admissionYear: string) {
     const results = await query<RowDataPacket[]>(`
       SELECT DISTINCT DATE(idcard.issue_date) as date
       FROM id_card_issues idcard
-      JOIN accademicyear ay ON ay.accademicYearName = ?
+      JOIN studentpersonaldetails s ON s.id = idcard.student_id_fk
+      JOIN accademicyear ay ON ay.accademicYearName = s.admissionYear
+      WHERE ay.accademicYearName = ?
+      AND idcard.issue_date IS NOT NULL
+      ORDER BY date DESC
     `, [admissionYear]);
   console.log(`results:`, results)
     return results as { date: string }[];
   }
 
- 
-
-
-export async function fetchIdCardStatsPerHour(date: string) {
+export async function fetchIdCardStatsPerDate(year: string, date: string) {
   const parsedDate = parse(date, 'dd-MM-yyyy', new Date());
   const formattedDate = format(parsedDate, 'yyyy-MM-dd');
 
   console.log("Formatted issue_date:", formattedDate);
 
-  // Get only the non-zero hour groups from DB
+  // Get date-based statistics from DB
   const dbResults = await query<RowDataPacket[]>(`
     SELECT 
-      HOUR(CONVERT_TZ(created_at, '+00:00', '+05:30')) AS hour,
+      DATE(issue_date) AS date,
       COUNT(*) AS count,
       GROUP_CONCAT(id) AS issue_ids
     FROM 
       id_card_issues
     WHERE 
-      issue_date = ?
+      YEAR(issue_date) = ?
+      AND issue_date = ?
     GROUP BY 
-      hour
+      DATE(issue_date)
     ORDER BY 
-      hour
-  `, [formattedDate]);
+      date
+  `, [year, formattedDate]);
 
   // Only include results with count > 0
   return dbResults
-    .filter((row) => row.count > 0 && row.hour !== null)
+    .filter((row) => row.count > 0 && row.date !== null)
     .map((row) => {
-      const from = `${row.hour.toString().padStart(2, '0')}:00`;
-      const to = `${((row.hour + 1) % 24).toString().padStart(2, '0')}:00`;
-
+      const formattedDisplayDate = format(new Date(row.date), 'dd-MM-yyyy');
+      
       return {
-        from,
-        to,
+        date: formattedDisplayDate,
         count: row.count,
         issue_ids: row.issue_ids?.split(',').map(Number) || []
       };
@@ -65,13 +65,13 @@ export async function fetchIdCardStatsPerHour(date: string) {
 import ExcelJS from 'exceljs';
 
 /**
- * Generate Excel for ID cards issued at a specific date + hour
+ * Generate Excel for ID cards issued on a specific date
  * Only includes entries where issue_status = 'ISSUED'
  */
 import { format as formatDate } from 'date-fns';
 
-export async function downloadIdCardDetails(date: string, hour: number): Promise<ArrayBuffer | Uint8Array> {
-  console.log('fired download');
+export async function downloadIdCardDetailsByDate(date: string): Promise<ArrayBuffer | Uint8Array> {
+  console.log('fired download by date');
   // Robust date parsing
   let formattedDate = date;
   if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
@@ -96,10 +96,9 @@ export async function downloadIdCardDetails(date: string, hour: number): Promise
     JOIN studentpersonaldetails s ON s.id = i.student_id_fk
     WHERE 
       i.issue_date = ?
-      AND HOUR(CONVERT_TZ(i.created_at, '+00:00', '+05:30')) = ?
       AND i.issue_status = 'ISSUED'
     ORDER BY i.created_at
-  `, [formattedDate, hour]);
+  `, [formattedDate]);
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet('ID Card Details');

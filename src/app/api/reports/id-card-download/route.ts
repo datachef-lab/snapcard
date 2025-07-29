@@ -1,23 +1,22 @@
-import { downloadIdCardDetails } from '@/app/dashboard/reports/action';
+import { downloadIdCardDetailsByDate } from '@/app/dashboard/reports/action';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const date = searchParams.get('date');
-  const hour = searchParams.get('hour');
 
-  if (!date || !hour) {
-    return new NextResponse('Missing date or hour', { status: 400 });
+  if (!date) {
+    return new NextResponse('Missing date', { status: 400 });
   }
 
   try {
-    const buffer = await downloadIdCardDetails(date, parseInt(hour));
+    const buffer = await downloadIdCardDetailsByDate(date);
 
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="id-cards-${date}-${hour}.xlsx"`,
+        'Content-Disposition': `attachment; filename="id-cards-${date}.xlsx"`,
       },
     });
   } catch (err) {
