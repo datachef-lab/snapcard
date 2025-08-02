@@ -22,6 +22,8 @@ import * as faceapi from 'face-api.js';
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 export default function Page() {
   // const {user} = useAuth();
   const [value, setValue] = useState("");
@@ -106,7 +108,7 @@ export default function Page() {
   // Auto-switch type if current selection is disabled
   // (Removed: issueType is now always 'ISSUED')
 
-  const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
+  
 
 
   useEffect(() => {
@@ -116,7 +118,7 @@ export default function Page() {
     // console.log("templates.length:", templates.length);
     // console.log("BASE_PATH:", BASE_PATH);
     if (userDetails) {
-      if (templates.length > 0) {
+      if (templates.length > 0 && !previewUrl) {
         // console.log("Setting template and preview URL from templates");
         setSelectedTemplate(templates[0]);
         setPositions(templates[0]);
@@ -151,7 +153,10 @@ export default function Page() {
     setUserDetails(null);
     setNotFound(false);
     setLoading(true);
-    setHasExistingIdCard(false);
+    setGeneratedCard(null);
+    // setHasExistingIdCard(false);
+    // setCapturedImage(null)
+    // setPreviewUrl(null)
     try {
       const res = await fetch(`${BASE_PATH}/api/students?uid=${searchValue}`);
       const data = await res.json();
@@ -166,6 +171,17 @@ export default function Page() {
           if (idCardData.data && idCardData.data.length > 0) {
             setIdCardIssues(idCardData.data);
             setHasExistingIdCard(true);
+
+
+            setSelectedTemplate(templates[0]);
+        setPositions(templates[0]);
+        // setQrcodeSize(templates[0].qrcodeSize);
+        // setPhotoRect(templates[0].photoDimension);
+
+        const previewUrlValue = `${BASE_PATH}/api/id-card-template/${templates[0].id}`;
+        // console.log("Setting preview URL:", previewUrlValue);
+        setPreviewUrl(previewUrlValue);
+
             
             // Get the captured image from the API
             try {
@@ -265,7 +281,9 @@ export default function Page() {
         tempCtx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
         const croppedImage = tempCanvas.toDataURL('image/png');
         setCapturedImage(croppedImage);
+        setGeneratedCard(null)
         setShowWebcam(false);
+        generateIDCard();
       }
     }
   }, [webcamRef]);
@@ -552,7 +570,7 @@ export default function Page() {
     console.log("userDetails:", userDetails);
     console.log("userDetails?.name:", userDetails?.name);
     console.log("previewUrl:", previewUrl);
-    if (capturedImage && userDetails && userDetails.name && previewUrl) {
+    if (capturedImage && userDetails && userDetails.name && previewUrl && !generatedCard) {
       console.log("All conditions met, calling generateIDCard");
       generateIDCard();
     } else {
@@ -565,7 +583,7 @@ export default function Page() {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userDetails, capturedImage, previewUrl, positions, positions.qrcodeSize, validTillDate, positions.photoDimension]);
+  }, [userDetails, capturedImage, previewUrl, positions, hasExistingIdCard, positions.qrcodeSize, validTillDate, generatedCard, positions.photoDimension]);
 
 //   const handleInputChange = (field: keyof Student, value: string) => {
 //     setUserDetails((prev) => {
@@ -832,31 +850,6 @@ export default function Page() {
                               <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
                                 History
                               </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={() => {
-                                  console.log("Manual trigger - Current state:");
-                                  console.log("capturedImage:", capturedImage);
-                                  console.log("userDetails:", userDetails);
-                                  console.log("previewUrl:", previewUrl);
-                                  console.log("canvasRef.current:", canvasRef.current);
-                                  if (capturedImage && userDetails && userDetails.name && previewUrl) {
-                                    console.log("Manually calling generateIDCard");
-                                    generateIDCard();
-                                  } else {
-                                    console.log("Cannot generate - missing required data");
-                                    console.log("Missing:", {
-                                      capturedImage: !capturedImage,
-                                      userDetails: !userDetails,
-                                      userName: !userDetails?.name,
-                                      previewUrl: !previewUrl
-                                    });
-                                  }
-                                }}
-                              >
-                                Debug Generate
-                              </Button>
                             </div>
                           </CardTitle>
                           
@@ -990,15 +983,16 @@ export default function Page() {
           setUserDetails({ ...userDetails, rfidno: data.student.rfidno });
           toast.success('RFID updated successfully!');
           // Also save the photo after RFID is saved (only if no existing ID card)
-          if (!hasExistingIdCard) {
+          // if (!hasExistingIdCard) {
             await handleSaveImage();
+            // await handleSearchSubmit(e)
             // Fetch id card issues again after saving photo
-            if (userDetails?.id) {
-              fetch(`${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id}`)
-                .then(res => res.json())
-                .then(data => setIdCardIssues(data.data || []));
-            }
-          }
+            // if (userDetails?.id) {
+            //   fetch(`${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id}`)
+            //     .then(res => res.json())
+            //     .then(data => setIdCardIssues(data.data || []));
+            // }
+          // }
         } else {
           toast.error('Failed to update RFID.');
         }
@@ -1161,7 +1155,7 @@ export default function Page() {
                             </Button>
                           </div>
                           {/* New section for Type and Remarks */}
-                           <div className="mt-8 max-w-lg mx-auto bg-white rounded-xl shadow p-6">
+                           {hasExistingIdCard && <div className="mt-8 max-w-lg mx-auto bg-white rounded-xl shadow p-6">
                             <div className="mb-4">
                               <label className="block font-semibold mb-1">Type</label>
                               <div className="flex gap-6">
@@ -1217,7 +1211,7 @@ export default function Page() {
                                 </p>
                               </div>
                             )}
-                          </div>
+                          </div>}
                         </CardContent>
                       </Card>
                     </div>
@@ -1333,7 +1327,12 @@ export default function Page() {
                             // Always refresh issues after delete
                             fetch(`${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id}`)
                               .then(res => res.json())
-                              .then(data => setIdCardIssues(data.data || []));
+                              .then(data => {
+                                setIdCardIssues(data.data || [])
+                                setHasExistingIdCard(data.data.length > 0);
+                                setCapturedImage(null)
+                                setGeneratedCard(null);
+                              });
                             toast.success("ID card issue deleted.");
                           } catch {
                             toast.error("Failed to delete ID card issue.");
