@@ -40,6 +40,7 @@ export default function Page() {
   const [showBack, setShowBack] = useState(false)
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
+  const [hasExistingIdCard, setHasExistingIdCard] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   // Scaling factors for new canvas size (old: 600x900, new: 638x1004)
@@ -67,7 +68,7 @@ export default function Page() {
   // const [qrcodeSize, setQrcodeSize] = useState(190);
   const [validTillDate, setValidTillDate] = useState("");
   // const [photoRect, setPhotoRect] = useState({ x: 240, y: 280, width: 200, height: 250 });
-  const issueType = "ISSUED";
+  const [issueType, setIssueType] = useState("ISSUED");
   const [remarks, setRemarks] = useState("First card issued");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [viewCardIssueId, setViewCardIssueId] = useState<number | null>(null);
@@ -76,12 +77,12 @@ export default function Page() {
   const [deleteIssueId, setDeleteIssueId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState<IdCardTemplate[]>([]);
-  const setSelectedTemplate = useState<IdCardTemplate | null>(null)[1];
+  const [selectedTemplate, setSelectedTemplate] = useState<IdCardTemplate | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const setFile = useState<File | null>(null)[1];
+  const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const setFaceDetected = useState(false)[1]; // For face detection
-  const setNumFaces = useState(0)[1]; // For face detection
+  const [faceDetected, setFaceDetected] = useState(false); // For face detection
+  const [numFaces, setNumFaces] = useState(0); // For face detection
   const [modelsLoaded, setModelsLoaded] = useState(false); // Face-api.js models
 
   // Update remarks when issueType changes
@@ -91,25 +92,53 @@ export default function Page() {
     else if (issueType === "REISSUED") setRemarks("Reissued due to lost/update card");
   }, [issueType]);
 
+  // Set default issue type and remarks based on existing ID card
+  useEffect(() => {
+    if (hasExistingIdCard) {
+      setIssueType("REISSUED");
+      setRemarks("Reissued due to lost/update card");
+    } else {
+      setIssueType("ISSUED");
+      setRemarks("First card issued");
+    }
+  }, [hasExistingIdCard]);
+
   // Auto-switch type if current selection is disabled
   // (Removed: issueType is now always 'ISSUED')
 
   const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
+
   useEffect(() => {
-    if (userDetails && templates.length > 0) {
-      // const tmpt =templates.find(ele => ele.admissionYear == (userDetails).academicYear);
-      // if (tmpt) {
+    // console.log("Template useEffect triggered");
+    // console.log("userDetails:", userDetails);
+    // console.log("templates:", templates);
+    // console.log("templates.length:", templates.length);
+    // console.log("BASE_PATH:", BASE_PATH);
+    if (userDetails) {
+      if (templates.length > 0) {
+        // console.log("Setting template and preview URL from templates");
         setSelectedTemplate(templates[0]);
         setPositions(templates[0]);
         // setQrcodeSize(templates[0].qrcodeSize);
         // setPhotoRect(templates[0].photoDimension);
 
-        setPreviewUrl(`${BASE_PATH}/api/id-card-template/${templates[0].id}`);
-        // setFile(null);
-      // }
+        const previewUrlValue = `${BASE_PATH}/api/id-card-template/${templates[0].id}`;
+        // console.log("Setting preview URL:", previewUrlValue);
+        setPreviewUrl(previewUrlValue);
+      } else {
+        // console.log("No templates available, using fallback template");
+        // Use fallback template when no templates are available
+        const fallbackTemplateUrl = `${BASE_PATH}/id-template-new-frontend.jpeg`;
+        // console.log("Setting fallback preview URL:", fallbackTemplateUrl);
+        setPreviewUrl(fallbackTemplateUrl);
+      }
+    } else {
+      // Clear preview URL when no user details
+      // console.log("Clearing preview URL - no user details");
+      setPreviewUrl(null);
     }
-  }, [userDetails, templates, BASE_PATH, setSelectedTemplate, setPositions, setPreviewUrl, setFile]);
+  }, [userDetails, templates, BASE_PATH]);
 
   // Remove auto-search on input change. Add form with submit button for UID search.
 
@@ -122,12 +151,58 @@ export default function Page() {
     setUserDetails(null);
     setNotFound(false);
     setLoading(true);
+    setHasExistingIdCard(false);
     try {
       const res = await fetch(`${BASE_PATH}/api/students?uid=${searchValue}`);
       const data = await res.json();
       if (data.content && data.content.length > 0) {
         setUserDetails({...data.content[0], courseName: data.content[0].courseName ?? '', phoneMobileNo: data.content[0].phoneMobileNo ?? ''});
         setNotFound(false);
+        
+        // Check if ID card already exists for this student
+        const idCardRes = await fetch(`${BASE_PATH}/api/id-card-issue?student_id=${data.content[0].id}`);
+        if (idCardRes.ok) {
+          const idCardData = await idCardRes.json();
+          if (idCardData.data && idCardData.data.length > 0) {
+            setIdCardIssues(idCardData.data);
+            setHasExistingIdCard(true);
+            
+            // Get the captured image from the API
+            try {
+              // console.log("Fetching existing image from API...");
+              const imageRes = await fetch(`${BASE_PATH}/api/images?uid=${searchValue}&crop=true`);
+              // console.log("Image API response status:", imageRes.status);
+              if (imageRes.ok) {
+                const imageBlob = await imageRes.blob();
+                const imageUrl = URL.createObjectURL(imageBlob);
+                // console.log("Setting captured image from API:", imageUrl);
+                setCapturedImage(imageUrl);
+              } else {
+                // console.error("Image API returned error status:", imageRes.status);
+                const errorText = await imageRes.text();
+                // console.error("Error response:", errorText);
+                // Fallback: try to get the original image without cropping
+                try {
+                  const fallbackRes = await fetch(`${BASE_PATH}/api/images?uid=${searchValue}`);
+                  if (fallbackRes.ok) {
+                    const fallbackBlob = await fallbackRes.blob();
+                    const fallbackUrl = URL.createObjectURL(fallbackBlob);
+                    // console.log("Setting fallback image:", fallbackUrl);
+                    setCapturedImage(fallbackUrl);
+                  }
+                } catch (fallbackError) {
+                  console.error("Fallback image fetch also failed:", fallbackError);
+                }
+              }
+            } catch (error) {
+              console.error("Failed to fetch existing image:", error);
+            }
+          } else {
+            setIdCardIssues([]);
+            setHasExistingIdCard(false);
+          }
+        }
+        
         // Fetch template for this student's admission year (same as before)
         const admissionYear = data.content[0].academicYear;
         if (admissionYear) {
@@ -147,7 +222,9 @@ export default function Page() {
       setUserDetails(null);
       setNotFound(true);
     } finally {
-      setCapturedImage(null); 
+      if (!hasExistingIdCard) {
+        setCapturedImage(null); 
+      }
       setGeneratedCard(null);
       setLoading(false);
     }
@@ -186,7 +263,7 @@ export default function Page() {
       const tempCtx = tempCanvas.getContext('2d');
       if (tempCtx) {
         tempCtx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-        const croppedImage = tempCanvas.toDataURL('image/jpeg');
+        const croppedImage = tempCanvas.toDataURL('image/png');
         setCapturedImage(croppedImage);
         setShowWebcam(false);
       }
@@ -194,10 +271,20 @@ export default function Page() {
   }, [webcamRef]);
 
   const generateIDCard = useCallback(async () => {
-    console.log("Generating ID card")
-    console.log("Captured image:", capturedImage)
-    console.log("Canvas:", canvasRef.current)
-    console.log("Preview URL:", previewUrl)
+    const imageRes = hasExistingIdCard ? await fetch(`${BASE_PATH}/api/images?uid=${searchValue}&crop=true`) : null;
+    if (imageRes && imageRes.ok) {
+      const imageBlob = await imageRes.blob();
+      const imageUrl = URL.createObjectURL(imageBlob);
+      setCapturedImage(imageUrl);
+    }
+
+    // console.log("Generating ID card")
+    // console.log("Captured image:", capturedImage)
+    // console.log("Canvas:", canvasRef.current)
+    // console.log("Preview URL:", previewUrl)
+    // console.log("User details:", userDetails)
+    // console.log("Has existing ID card:", hasExistingIdCard)
+
     if (!capturedImage || !canvasRef.current || !previewUrl) {
       console.log("No captured image or canvas or preview URL")
       return;
@@ -227,21 +314,28 @@ export default function Page() {
     templateImg.crossOrigin = "anonymous"
 
     templateImg.onload = async () => {
+      console.log("Template image loaded successfully");
+      console.log("Template image dimensions:", templateImg.width, "x", templateImg.height);
+      console.log("Template image src:", templateImg.src);
       // Clear canvas first
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
       // Draw the clean template background
       ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height)
+      console.log("Template background drawn");
 
       // Load and draw the captured photo
       const userImg = typeof window !== 'undefined' ? new window.Image() : new Image();
 
       userImg.onload = async () => {
+        console.log("User image loaded successfully");
+        console.log("User image dimensions:", userImg.width, "x", userImg.height);
         // Photo placement coordinates for the clean template
         const photoX = positions.photoDimension.x //  photoRect.x // X position of photo area
         const photoY = positions.photoDimension.y // photoRect.y // Y position of photo area
         const photoWidth = positions.photoDimension.width // photoRect.width // Width of photo area
         const photoHeight = positions.photoDimension.height // photoRect.height // Height of photo area
+        console.log("Photo placement:", { photoX, photoY, photoWidth, photoHeight });
 
         // Save context for clipping
         ctx.save()
@@ -380,28 +474,44 @@ export default function Page() {
         // QR Code (containing UID)
         if (userDetails && userDetails.codeNumber) {
           try {
+            console.log("Generating QR code for:", userDetails.codeNumber);
             const qrDataUrl = await QRCode.toDataURL(userDetails.codeNumber, { margin: 0, width: positions.qrcodeSize })
             const qrImg = new window.Image()
             qrImg.onload = () => {
+              console.log("QR code image loaded");
               ctx.drawImage(qrImg, positions.qrcodeCoordinates.x, positions.qrcodeCoordinates.y, positions.qrcodeSize, positions.qrcodeSize)
               // Convert canvas to image and set it
               const generatedImageUrl = canvas.toDataURL("image/png", 1.0)
+              console.log("Generated ID card URL (with QR):", generatedImageUrl.substring(0, 100) + "...");
+              setGeneratedCard(generatedImageUrl)
+            }
+            qrImg.onerror = () => {
+              console.error("Failed to load QR code image");
+              // Fallback: generate without QR code
+              const generatedImageUrl = canvas.toDataURL("image/png", 1.0)
+              console.log("Generated ID card URL (without QR):", generatedImageUrl.substring(0, 100) + "...");
               setGeneratedCard(generatedImageUrl)
             }
             qrImg.src = qrDataUrl
             return // Wait for QR to load before setting image
           } catch (err) {
             console.error("Failed to generate QR code", err)
+            // Fallback: generate without QR code
+            const generatedImageUrl = canvas.toDataURL("image/png", 1.0)
+            console.log("Generated ID card URL (QR error fallback):", generatedImageUrl.substring(0, 100) + "...");
+            setGeneratedCard(generatedImageUrl)
           }
         }
 
         // Convert canvas to image and set it (if no QR code)
         const generatedImageUrl = canvas.toDataURL("image/png", 1.0)
+        console.log("Generated ID card URL:", generatedImageUrl.substring(0, 100) + "...");
         setGeneratedCard(generatedImageUrl)
       }
 
       userImg.onerror = () => {
         console.error("Failed to load user image")
+        console.error("User image src:", userImg.src);
       }
 
       userImg.src = capturedImage
@@ -409,10 +519,19 @@ export default function Page() {
 
     templateImg.onerror = () => {
       console.error("Failed to load template image")
+      console.error("Template image src:", templateImg.src);
+      console.error("Template image error details:", templateImg);
+      // Try fallback template
+      console.log("Trying fallback template...");
+      const fallbackUrl = `${BASE_PATH}/id-template-new-frontend.jpeg`;
+      console.log("Fallback template URL:", fallbackUrl);
+      templateImg.src = fallbackUrl;
     }
 
     // Use the clean template image
     // templateImg.src = `${process.env.NEXT_PUBLIC_BASE_PATH}/id-template-new-frontend.jpeg`
+    console.log("Setting template image src to:", previewUrl);
+    console.log("Template image object:", templateImg);
     templateImg.src = previewUrl;
   }, [capturedImage, userDetails, previewUrl, validTillDate,
       positions.photoDimension,
@@ -428,11 +547,25 @@ export default function Page() {
   ]);
 
   useEffect(() => {
-    if (capturedImage && userDetails && userDetails.name) {
+    console.log("useEffect triggered for ID card generation");
+    console.log("capturedImage:", capturedImage);
+    console.log("userDetails:", userDetails);
+    console.log("userDetails?.name:", userDetails?.name);
+    console.log("previewUrl:", previewUrl);
+    if (capturedImage && userDetails && userDetails.name && previewUrl) {
+      console.log("All conditions met, calling generateIDCard");
       generateIDCard();
+    } else {
+      console.log("Conditions not met for ID card generation");
+      console.log("Missing:", {
+        capturedImage: !capturedImage,
+        userDetails: !userDetails,
+        userName: !userDetails?.name,
+        previewUrl: !previewUrl
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userDetails, capturedImage, positions, positions.qrcodeSize, validTillDate, positions.photoDimension]);
+  }, [userDetails, capturedImage, previewUrl, positions, positions.qrcodeSize, validTillDate, positions.photoDimension]);
 
 //   const handleInputChange = (field: keyof Student, value: string) => {
 //     setUserDetails((prev) => {
@@ -526,10 +659,19 @@ export default function Page() {
     fetch(`${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id!}`)
       .then(res => res.json())
       .then(data => {
-        if (data.success) setIdCardIssues(data.data || []);
-        else setIdCardIssues([]);
+        if (data.success) {
+          const issues = data.data || [];
+          setIdCardIssues(issues);
+          setHasExistingIdCard(issues.length > 0);
+        } else {
+          setIdCardIssues([]);
+          setHasExistingIdCard(false);
+        }
       })
-      .catch(() => setIdCardIssues([]));
+      .catch(() => {
+        setIdCardIssues([]);
+        setHasExistingIdCard(false);
+      });
   }, [userDetails?.id, BASE_PATH, userDetails]);
 
   // Set default valid till date if not present
@@ -627,7 +769,7 @@ export default function Page() {
     };
     const intervalId = setInterval(detect, 400); // Check every 400ms
     return () => clearInterval(intervalId);
-  }, [showWebcam, modelsLoaded, setNumFaces, setFaceDetected]);
+  }, [showWebcam, modelsLoaded]);
 
 
   return (
@@ -686,9 +828,34 @@ export default function Page() {
                               {/* <span className="truncate" title={userDetails.name}>{userDetails.name}</span> */}
                             </div>
                             <span className="flex items-center gap-2"><User className="w-5 h-5" />Personal Details</span>
-                            <div>
+                            <div className="flex gap-2">
                               <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
                                 History
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => {
+                                  console.log("Manual trigger - Current state:");
+                                  console.log("capturedImage:", capturedImage);
+                                  console.log("userDetails:", userDetails);
+                                  console.log("previewUrl:", previewUrl);
+                                  console.log("canvasRef.current:", canvasRef.current);
+                                  if (capturedImage && userDetails && userDetails.name && previewUrl) {
+                                    console.log("Manually calling generateIDCard");
+                                    generateIDCard();
+                                  } else {
+                                    console.log("Cannot generate - missing required data");
+                                    console.log("Missing:", {
+                                      capturedImage: !capturedImage,
+                                      userDetails: !userDetails,
+                                      userName: !userDetails?.name,
+                                      previewUrl: !previewUrl
+                                    });
+                                  }
+                                }}
+                              >
+                                Debug Generate
                               </Button>
                             </div>
                           </CardTitle>
@@ -822,13 +989,15 @@ export default function Page() {
         if (data && data.student) {
           setUserDetails({ ...userDetails, rfidno: data.student.rfidno });
           toast.success('RFID updated successfully!');
-          // Also save the photo after RFID is saved
-          await handleSaveImage();
-          // Fetch id card issues again after saving photo
-          if (userDetails?.id) {
-            fetch(`${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id}`)
-              .then(res => res.json())
-              .then(data => setIdCardIssues(data.data || []));
+          // Also save the photo after RFID is saved (only if no existing ID card)
+          if (!hasExistingIdCard) {
+            await handleSaveImage();
+            // Fetch id card issues again after saving photo
+            if (userDetails?.id) {
+              fetch(`${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id}`)
+                .then(res => res.json())
+                .then(data => setIdCardIssues(data.data || []));
+            }
           }
         } else {
           toast.error('Failed to update RFID.');
@@ -848,8 +1017,14 @@ export default function Page() {
     onChange={e => setUserDetails(prev => prev ? { ...prev, rfidno: e.target.value } : prev)}
     placeholder="Enter RFID"
     className="w-48"
+    disabled={hasExistingIdCard}
   />
-  <Button type="submit" className="h-9 px-4 bg-blue-600 text-white rounded-lg">Save</Button>
+  <Button 
+    type="submit" 
+    className="h-9 px-4 bg-blue-600 text-white rounded-lg"
+  >
+    Save
+  </Button>
 </form>
 
                           {/* <div className="flex flex-col gap-2 mt-6">
@@ -921,8 +1096,13 @@ export default function Page() {
                             )}
                           </div>
                           <div className="mt-4 flex gap-2">
-                            <Button className="w-1/2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 shadow" onClick={() => setShowWebcam(true)} size="lg">
-                              {capturedImage ? "Change Photo" : "Capture Photo"}
+                            <Button 
+                              className="w-1/2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 shadow" 
+                              onClick={() => setShowWebcam(true)} 
+                              size="lg"
+                              disabled={hasExistingIdCard}
+                            >
+                              {hasExistingIdCard ? "Photo Already Captured" : (capturedImage ? "Change Photo" : "Capture Photo")}
                             </Button>
                             <Button
                               onClick={() => {
@@ -981,32 +1161,40 @@ export default function Page() {
                             </Button>
                           </div>
                           {/* New section for Type and Remarks */}
-                          {/* <div className="mt-8 max-w-lg mx-auto bg-white rounded-xl shadow p-6">
+                           <div className="mt-8 max-w-lg mx-auto bg-white rounded-xl shadow p-6">
                             <div className="mb-4">
                               <label className="block font-semibold mb-1">Type</label>
                               <div className="flex gap-6">
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id="issued"
-                                    checked={true}
-                                    disabled
-                                    
+                                    checked={issueType === "ISSUED"}
+                                    disabled={hasExistingIdCard}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) setIssueType("ISSUED");
+                                    }}
                                   />
-                                  <label htmlFor="issued" className="text-sm font-medium">ISSUED</label>
+                                  <label htmlFor="issued" className={`text-sm font-medium ${hasExistingIdCard ? 'text-gray-400' : ''}`}>ISSUED</label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id="renewed"
-                                    checked={false}
-                                    disabled
+                                    checked={issueType === "RENEWED"}
+                                    disabled={false}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) setIssueType("RENEWED");
+                                    }}
                                   />
                                   <label htmlFor="renewed" className="text-sm font-medium">RENEWED</label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
                                     id="reissued"
-                                    checked={false}
-                                    disabled
+                                    checked={issueType === "REISSUED"}
+                                    disabled={false}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) setIssueType("REISSUED");
+                                    }}
                                   />
                                   <label htmlFor="reissued" className="text-sm font-medium">REISSUED</label>
                                 </div>
@@ -1018,9 +1206,18 @@ export default function Page() {
                                 value={remarks}
                                 onChange={e => setRemarks(e.target.value)}
                                 placeholder="Enter remarks"
+                                disabled={false}
                               />
                             </div>
-                          </div> */}
+                            {hasExistingIdCard && (
+                              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <p className="text-sm text-blue-800">
+                                  <strong>Note:</strong> This student already has an ID card issued. 
+                                  You can select "RENEWED" or "REISSUED" type and add appropriate remarks.
+                                </p>
+                              </div>
+                            )}
+                          </div>
                         </CardContent>
                       </Card>
                     </div>

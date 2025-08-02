@@ -4,7 +4,7 @@ import path from 'path';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const id = (await params).id;
-  const filePath = path.join(process.env.SNAPCARD_IMAGE_BASE_PATH || '', 'templates', `${id}.jpeg`);
+  const filePath = path.join(process.env.SNAPCARD_IMAGE_BASE_PATH || './public', 'templates', `${id}.jpeg`);
   try {
     const file = await fs.readFile(filePath);
     return new NextResponse(file, {

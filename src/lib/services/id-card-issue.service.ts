@@ -56,6 +56,19 @@ export async function getIdCardIssueById(id: number) {
   return result;
 }
 
+export async function getIdCardIssuesByUid(uid: string) {
+    const result = await query<RowDataPacket[]>(
+      `SELECT i.*
+       FROM id_card_issues i
+       JOIN studentpersonaldetails spd ON spd.id = i.student_id_fk
+       WHERE spd.codeNumber = ?
+       ORDER BY i.issue_date DESC`,
+      [uid]
+    ) as IdCardIssue[];
+
+    return result;
+  }
+
 export async function updateIdCardIssue(id: number, update: Partial<IdCardIssue>) {
     const fields = Object.keys(update).map(key => `${key} = ?`).join(', ');
     const values = Object.values(update);

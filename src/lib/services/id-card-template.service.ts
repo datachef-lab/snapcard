@@ -4,7 +4,7 @@ import { desc, eq } from "drizzle-orm";
 import fs from "fs/promises";
 import path from "path";
 
-const BASE_PATH = `${process.env.SNAPCARD_IMAGE_BASE_PATH}/templates`; // Template files to be stored in this path with the template file name as same is id of the template. Also, it can be override if updated
+const BASE_PATH = `${process.env.SNAPCARD_IMAGE_BASE_PATH || './public'}/templates`; // Template files to be stored in this path with the template file name as same is id of the template. Also, it can be override if updated
 
 async function saveTemplateFile(id: number, file: File) {
   const arrayBuffer = await file.arrayBuffer();
