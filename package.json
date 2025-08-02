@@ -2,11 +2,13 @@
   "name": "snapcard",
   "version": "2.6.0",
   "private": true,
+
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start -p 3013",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate:images": "ts-node src/script/index.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -97,8 +99,9 @@
     "eslint": "^9",
     "eslint-config-next": "15.4.1",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
     "tw-animate-css": "^1.3.5",
-    "typescript": "^5"
+    "typescript": "^5.9.2"
   }
 }
