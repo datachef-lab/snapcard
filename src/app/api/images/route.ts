@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import path from "path";
 import fs from "fs";
-import { dbPostgres } from "@/lib/db";
 import { getIdCardIssuesByUid } from "@/lib/services/id-card-issue.service";
 
 const SNAPCARD_IMAGE_BASE_PATH = process.env.SNAPCARD_IMAGE_BASE_PATH || "./public";

@@ -5,6 +5,7 @@ import archiver from 'archiver';
 import { query } from '@/lib/db';
 import { RowDataPacket } from 'mysql2';
 import { IdCardIssue } from '@/types';
+import { number } from 'zod';
 
 export interface IdCardIssueWithCodeNumber extends IdCardIssue {
   codeNumber: string;
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     while (hasMore) {
       let queryString = '';
-      let queryParams: any[] = [];
+      let queryParams: (string | number)[] = [];
 
       if (date) {
         // If date is provided, filter by specific date

@@ -43,7 +43,7 @@ export default function Page() {
   const [zoomOpen, setZoomOpen] = useState(false);
   const [zoomImg, setZoomImg] = useState<string | null>(null);
   const [hasExistingIdCard, setHasExistingIdCard] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const setSaving = useState(false)[1];
   const [saveStatus, setSaveStatus] = useState<"idle" | "success" | "error">("idle");
   // Scaling factors for new canvas size (old: 600x900, new: 638x1004)
   const SCALE_X = 638 / 600;
@@ -79,12 +79,12 @@ export default function Page() {
   const [deleteIssueId, setDeleteIssueId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState<IdCardTemplate[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState<IdCardTemplate | null>(null);
+  const setSelectedTemplate = useState<IdCardTemplate | null>(null)[1];
   const [notFound, setNotFound] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  // const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [faceDetected, setFaceDetected] = useState(false); // For face detection
-  const [numFaces, setNumFaces] = useState(0); // For face detection
+  const setFaceDetected = useState(false)[1]; // For face detection
+  const setNumFaces = useState(0)[1]; // For face detection
   const [modelsLoaded, setModelsLoaded] = useState(false); // Face-api.js models
 
   // Update remarks when issueType changes
@@ -140,7 +140,7 @@ export default function Page() {
       // console.log("Clearing preview URL - no user details");
       setPreviewUrl(null);
     }
-  }, [userDetails, templates, BASE_PATH]);
+  }, [userDetails, templates, previewUrl, setSelectedTemplate, BASE_PATH]);
 
   // Remove auto-search on input change. Add form with submit button for UID search.
 
@@ -195,7 +195,7 @@ export default function Page() {
                 setCapturedImage(imageUrl);
               } else {
                 // console.error("Image API returned error status:", imageRes.status);
-                const errorText = await imageRes.text();
+                // const errorText = await imageRes.text();
                 // console.error("Error response:", errorText);
                 // Fallback: try to get the original image without cropping
                 try {
@@ -1207,7 +1207,7 @@ export default function Page() {
                               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                 <p className="text-sm text-blue-800">
                                   <strong>Note:</strong> This student already has an ID card issued. 
-                                  You can select "RENEWED" or "REISSUED" type and add appropriate remarks.
+                                  You can select &quot;RENEWED&quot; or &quot;REISSUED&quot; type and add appropriate remarks.
                                 </p>
                               </div>
                             )}

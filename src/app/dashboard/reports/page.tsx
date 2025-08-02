@@ -1,8 +1,8 @@
 "use client";
 import { saveAs } from 'file-saver';
 import { format } from "date-fns";
-import React, { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+// import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Download as DownloadIcon } from 'lucide-react';
@@ -10,11 +10,11 @@ import { useAuth } from '@/hooks/use-auth';
 import { fetchAdmissionYears, fetchDatesByAdmissionYear } from './action';
 import { Spinner } from '@/components/ui/spinner';
 
-interface User {
-  name: string;
-  email: string;
-  type: 'Admin' | 'Member';
-}
+// interface User {
+//   name: string;
+//   email: string;
+//   type: 'Admin' | 'Member';
+// }
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_PATH!;
 
@@ -36,11 +36,11 @@ export default function ReportsPage() {
   }, []);
 
   // Use authenticated user info
-  const currentUser = useMemo(() => (
-    user
-      ? { name: user.name, email: user.email, type: user.isAdmin ? 'Admin' : 'Member' }
-      : { name: 'Unknown', email: 'unknown@example.com', type: 'Member' }
-  ), [user]);
+  // const currentUser = useMemo(() => (
+  //   user
+  //     ? { name: user.name, email: user.email, type: user.isAdmin ? 'Admin' : 'Member' }
+  //     : { name: 'Unknown', email: 'unknown@example.com', type: 'Member' }
+  // ), [user]);
 
   // Fetch dates when admissionYear changes
   useEffect(() => {
