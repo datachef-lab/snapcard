@@ -26,6 +26,7 @@ import NextImage from "next/image";
 import * as faceapi from "face-api.js";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+// import { set } from "zod";
 
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
@@ -169,7 +170,7 @@ export default function Page() {
       // console.log("Clearing preview URL - no user details");
       setPreviewUrl(null);
     }
-  }, [userDetails, templates, previewUrl, setSelectedTemplate, BASE_PATH]);
+  }, [userDetails, templates, previewUrl, setSelectedTemplate]);
 
   // Remove auto-search on input change. Add form with submit button for UID search.
 
@@ -300,48 +301,12 @@ export default function Page() {
       console.log(data);
       setTemplates(Array.isArray(data.data) ? data.data : []);
     }
-  }, [BASE_PATH]);
+  }, []);
 
   useEffect(() => {
     if (templates.length > 0) return;
     fetchTemplates();
   }, [templates, fetchTemplates]);
-
-  const capture = useCallback(() => {
-    // Always enable capture, crop to green box
-    const video = webcamRef.current?.video;
-    if (video) {
-      // Create a canvas to crop the center 420x420 region
-      const cropWidth = 420;
-      const cropHeight = 420;
-      const videoWidth = video.videoWidth;
-      const videoHeight = video.videoHeight;
-      const cropX = (videoWidth - cropWidth) / 2;
-      const cropY = (videoHeight - cropHeight) / 2;
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = cropWidth;
-      tempCanvas.height = cropHeight;
-      const tempCtx = tempCanvas.getContext("2d");
-      if (tempCtx) {
-        tempCtx.drawImage(
-          video,
-          cropX,
-          cropY,
-          cropWidth,
-          cropHeight,
-          0,
-          0,
-          cropWidth,
-          cropHeight
-        );
-        const croppedImage = tempCanvas.toDataURL("image/png");
-        setCapturedImage(croppedImage);
-        setGeneratedCard(null);
-        setShowWebcam(false);
-        generateIDCard();
-      }
-    }
-  }, [webcamRef]);
 
   const generateIDCard = useCallback(async () => {
     const imageRes = hasExistingIdCard
@@ -728,6 +693,11 @@ export default function Page() {
     console.log("Template image object:", templateImg);
     templateImg.src = previewUrl;
   }, [
+    SCALE_X,
+    SCALE_Y,  
+    hasExistingIdCard,
+
+    searchValue,
     capturedImage,
     userDetails,
     previewUrl,
@@ -743,6 +713,44 @@ export default function Page() {
     positions.qrcodeCoordinates,
     positions.qrcodeSize,
   ]);
+
+  const capture = useCallback(() => {
+    // Always enable capture, crop to green box
+    const video = webcamRef.current?.video;
+    if (video) {
+      // Create a canvas to crop the center 420x420 region
+      const cropWidth = 420;
+      const cropHeight = 420;
+      const videoWidth = video.videoWidth;
+      const videoHeight = video.videoHeight;
+      const cropX = (videoWidth - cropWidth) / 2;
+      const cropY = (videoHeight - cropHeight) / 2;
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = cropWidth;
+      tempCanvas.height = cropHeight;
+      const tempCtx = tempCanvas.getContext("2d");
+      if (tempCtx) {
+        tempCtx.drawImage(
+          video,
+          cropX,
+          cropY,
+          cropWidth,
+          cropHeight,
+          0,
+          0,
+          cropWidth,
+          cropHeight
+        );
+        const croppedImage = tempCanvas.toDataURL("image/png");
+        setCapturedImage(croppedImage);
+        setGeneratedCard(null);
+        setShowWebcam(false);
+        generateIDCard();
+      }
+    }
+  }, [webcamRef, generateIDCard]);
+
+  
 
   useEffect(() => {
     console.log("useEffect triggered for ID card generation");
@@ -794,7 +802,7 @@ export default function Page() {
     setSaveStatus("idle");
     try {
       // 1. Create new id card issue entry first
-      const lastIssueId = idCardIssues.length > 0 ? idCardIssues[0].id : null;
+      // const lastIssueId = idCardIssues.length > 0 ? idCardIssues[0].id : null;
       const renewedFromId = null;
       const issueRes = await fetch(`${BASE_PATH}/api/id-card-issue`, {
         method: "POST",
@@ -886,7 +894,7 @@ export default function Page() {
         setIdCardIssues([]);
         setHasExistingIdCard(false);
       });
-  }, [userDetails?.id, BASE_PATH, userDetails]);
+  }, [userDetails?.id, userDetails]);
 
   // Set default valid till date if not present
   useEffect(() => {
@@ -933,7 +941,7 @@ export default function Page() {
       isMounted = false;
       setModelsLoaded(false);
     };
-  }, [showWebcam, BASE_PATH]);
+  }, [showWebcam]);
 
   // Face detection loop
   useEffect(() => {
@@ -985,7 +993,7 @@ export default function Page() {
     };
     const intervalId = setInterval(detect, 400); // Check every 400ms
     return () => clearInterval(intervalId);
-  }, [showWebcam, modelsLoaded]);
+  }, [showWebcam, modelsLoaded, setFaceDetected,setNumFaces]);
 
   return (
     <>

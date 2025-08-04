@@ -1,6 +1,6 @@
 import { query } from "@/lib/db";
 import { getIdCardIssuesByUid } from "@/lib/services/id-card-issue.service";
-import { RowDataPacket } from "mysql2";
+// import { RowDataPacket } from "mysql2";
 import fs from "fs";
 import fetch from "node-fetch";
 import path from "path";
@@ -8,6 +8,7 @@ import { NextRequest } from "next/server";
 
 const BATCH_SIZE = 500;
 export async function GET(request: NextRequest) {
+    console.log(request.url);
     try {
         const [{ studentCount }] = (await query(`
             SELECT COUNT(DISTINCT student_id_fk) AS studentCount

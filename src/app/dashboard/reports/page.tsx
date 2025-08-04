@@ -20,8 +20,8 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_PATH!;
 
 export default function ReportsPage() {
   const { user } = useAuth();
-  const [admissionYears, setAdmissionYears] = useState<string[]>([]);
-  const [admissionYear, setAdmissionYear] = useState<string | null>(null);
+  const setAdmissionYears = useState<string[]>([])[1];
+  const setAdmissionYear = useState<string | null>(null)[1];
   const [dates, setDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -33,7 +33,7 @@ export default function ReportsPage() {
         setAdmissionYear(data[0]);
         setAdmissionYears(data);
       })
-  }, []);
+  }, [setAdmissionYear, setAdmissionYears]);
 
   // Use authenticated user info
   // const currentUser = useMemo(() => (

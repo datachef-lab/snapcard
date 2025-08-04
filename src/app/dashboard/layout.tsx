@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { AppSidebar } from "@/components/app-sidebar"
 // import { Separator } from "@/components/ui/separator"
 import {
@@ -53,12 +53,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Mock current user type
   const currentUserType: 'Admin' | 'Member' = 'Admin';
   // Replace with real user info in production
-  const getUserEmail = () => {
+  const getUserEmail = useCallback(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('userEmail') || 'test@gmail.com';
     }
     return 'test@gmail.com';
-  };
+  }, []);
+
   const currentUser = useMemo(() => ({ name: 'Test User', email: getUserEmail(), type: currentUserType }), [getUserEmail, currentUserType]);
 
   React.useEffect(() => {
