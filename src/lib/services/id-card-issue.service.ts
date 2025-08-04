@@ -62,7 +62,7 @@ export async function getIdCardIssuesByUid(uid: string) {
        FROM id_card_issues i
        JOIN studentpersonaldetails spd ON spd.id = i.student_id_fk
        WHERE spd.codeNumber = ?
-       ORDER BY i.issue_date DESC`,
+       ORDER BY i.created_at DESC`,
       [uid]
     ) as IdCardIssue[];
 
