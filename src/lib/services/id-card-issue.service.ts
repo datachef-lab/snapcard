@@ -110,6 +110,34 @@ export async function getIdCardIssuesByDate(date: string) {
     return result;
 }
 
+export async function getIdCardIssuesByDatePaginated(
+  date: string,
+  limit: number,
+  offset: number
+) {
+  const result = await query<RowDataPacket[]>(
+    `
+    SELECT i.id, spd.codeNumber
+    FROM id_card_issues i
+    JOIN studentpersonaldetails spd ON spd.id = i.student_id_fk
+    WHERE DATE(i.created_at) = ?
+      AND i.id IN (
+        SELECT MAX(inner_i.id)
+        FROM id_card_issues inner_i
+        JOIN studentpersonaldetails inner_spd ON inner_spd.id = inner_i.student_id_fk
+        WHERE DATE(inner_i.created_at) = ?
+        GROUP BY inner_spd.codeNumber
+      )
+    ORDER BY i.id ASC
+    LIMIT ?
+    OFFSET ?
+    `,
+    [date, date, limit, offset]
+  ) as { id: number; codeNumber: string }[];
+
+  return result;
+}
+
 
 
 
