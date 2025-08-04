@@ -44,50 +44,74 @@ export async function createIdCardIssue(givenIdCardIssue: IdCardIssue) {
 }
 
 export async function getIdCardIssueById(id: number) {
-  const [result] = await query<RowDataPacket[]>(
-    `SELECT i.*, ay.accademicYearName AS admissionYear
+    const [result] = await query<RowDataPacket[]>(
+        `SELECT i.*, ay.accademicYearName AS admissionYear
      FROM id_card_issues i
      JOIN studentpersonaldetails spd ON spd.id = i.student_id_fk
      JOIN accademicyear ay ON spd.academicyearid = ay.id
      WHERE i.id = ?
      ORDER BY i.issue_date DESC`,
-    [id]
-  ) as IdCardIssue[];
-  return result;
+        [id]
+    ) as IdCardIssue[];
+    return result;
 }
 
 export async function getIdCardIssuesByUid(uid: string) {
     const result = await query<RowDataPacket[]>(
-      `SELECT i.*
+        `SELECT i.*
        FROM id_card_issues i
        JOIN studentpersonaldetails spd ON spd.id = i.student_id_fk
        WHERE spd.codeNumber = ?
        ORDER BY i.created_at DESC`,
-      [uid]
+        [uid]
     ) as IdCardIssue[];
 
     return result;
-  }
+}
 
-  export async function getIdCardIssuesByUidAndDate(uid: string, date?: string) {
+export async function getIdCardIssuesByUidAndDate(uid: string, date?: string) {
     const baseQuery = `
       SELECT i.*
       FROM id_card_issues i
       JOIN studentpersonaldetails spd ON spd.id = i.student_id_fk
       WHERE spd.codeNumber = ?
     `;
-  
+
     const dateClause = date ? `AND DATE(i.created_at) = ?` : "";
     const orderClause = `ORDER BY i.id DESC`;
-  
+
     const result = await query<RowDataPacket[]>(
-      `${baseQuery} ${dateClause} ${orderClause}`,
-      date ? [uid, date] : [uid]
+        `${baseQuery} ${dateClause} ${orderClause}`,
+        date ? [uid, date] : [uid]
     ) as IdCardIssue[];
-  
+
     return result;
-  }
-  
+}
+
+export async function getIdCardIssuesByDate(date: string) {
+    const result = await query<RowDataPacket[]>(
+        `
+      SELECT i.id, spd.codeNumber
+      FROM id_card_issues i
+      JOIN studentpersonaldetails spd ON spd.id = i.student_id_fk
+      WHERE DATE(i.created_at) = ?
+      AND i.id IN (
+        SELECT MAX(inner_i.id)
+        FROM id_card_issues inner_i
+        JOIN studentpersonaldetails inner_spd ON inner_spd.id = inner_i.student_id_fk
+        WHERE DATE(inner_i.created_at) = ?
+        GROUP BY inner_spd.codeNumber
+      )
+      ORDER BY i.id DESC
+      `,
+        [date, date]
+    ) as { id: number; codeNumber: string }[];
+
+    return result;
+}
+
+
+
 
 export async function updateIdCardIssue(id: number, update: Partial<IdCardIssue>) {
     const fields = Object.keys(update).map(key => `${key} = ?`).join(', ');
