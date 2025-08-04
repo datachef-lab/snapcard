@@ -44,11 +44,11 @@ export default function ReportsPage() {
 
   // Fetch dates when admissionYear changes
   useEffect(() => {
-    if (!admissionYear) return;
+    // if (!admissionYear) return;
     
-    console.log('Fetching dates for admission year:', admissionYear);
+    // console.log('Fetching dates for admission year:', admissionYear);
     
-    fetchDatesByAdmissionYear(admissionYear)
+    fetchDatesByAdmissionYear()
       .then(data => {
         console.log('Raw dates from DB:', data);
         const formattedDates = data.map(ele =>
@@ -67,7 +67,7 @@ export default function ReportsPage() {
         setSelectedDate(null);
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [admissionYear]);
+  }, []);
 
   const handleDownloadByDate = async () => {
     if (!selectedDate) return;
@@ -108,15 +108,15 @@ export default function ReportsPage() {
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden px-6">
-        <div className="bg-white rounded-lg p-6 shadow-sm border max-w-3xl w-full mt-6 mx-auto">
-          <div className="space-y-6">
-            <div className="text-center mb-6">
+        <div className="bg-white rounded-lg">
+          {/* <div className="text-center mb-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-2">Download ID Cards</h2>
-              <p className="text-gray-600">Select admission year and date to download ID card reports</p>
-            </div>
+              </div> */}
+          <div className="flex gap-2  items-center">
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+            
+            <div className="w-2/3 gap-6">
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Admission Year
                 </label>
@@ -130,12 +130,12 @@ export default function ReportsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                {/* <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Date
-                </label>
+                </label> */}
                 <Select value={selectedDate ?? ""} onValueChange={setSelectedDate}>
                   <SelectTrigger className="w-full h-11 border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <SelectValue placeholder="Select Date" />
@@ -149,7 +149,7 @@ export default function ReportsPage() {
               </div>
             </div>
             
-            <div className="flex justify-center gap-4 mt-4">
+            <div className="flex justify-center gap-4 ">
               <Button 
                 onClick={handleDownloadByDate}
                 disabled={!selectedDate || downloading}
