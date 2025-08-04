@@ -1,38 +1,38 @@
-"use server"
+"use server";
 import { query } from "@/lib/db";
-import { Buffer } from 'node:buffer';
+import { Buffer } from "node:buffer";
 
 import { getAdmissionYears } from "@/lib/services/reports.service";
 import { format, parse } from "date-fns";
 import { RowDataPacket } from "mysql2";
 
 export async function fetchAdmissionYears() {
-    return await getAdmissionYears();
+  return await getAdmissionYears();
 }
 
-export async function fetchDatesByAdmissionYear(admissionYear: string) {
-    console.log("in fetchDatesByAdmissionYear(), admissionYear:", admissionYear)
-    const results = await query<RowDataPacket[]>(`
+export async function fetchDatesByAdmissionYear() {
+  // console.log("in fetchDatesByAdmissionYear(), admissionYear:", admissionYear);
+  const results = await query<RowDataPacket[]>(
+    `
       SELECT DISTINCT DATE(idcard.issue_date) as date
-      FROM id_card_issues idcard
-      JOIN studentpersonaldetails s ON s.id = idcard.student_id_fk
-      JOIN accademicyear ay ON ay.accademicYearName = s.admissionYear
-      WHERE ay.accademicYearName = ?
-      AND idcard.issue_date IS NOT NULL
-      ORDER BY date DESC
-    `, [admissionYear]);
-  console.log(`results:`, results)
-    return results as { date: string }[];
-  }
+    FROM id_card_issues idcard
+    ORDER BY date DESC
+    `,
+    []
+  );
+  console.log(`results:`, results);
+  return results as { date: string }[];
+}
 
 export async function fetchIdCardStatsPerDate(year: string, date: string) {
-  const parsedDate = parse(date, 'dd-MM-yyyy', new Date());
-  const formattedDate = format(parsedDate, 'yyyy-MM-dd');
+  const parsedDate = parse(date, "dd-MM-yyyy", new Date());
+  const formattedDate = format(parsedDate, "yyyy-MM-dd");
 
   console.log("Formatted issue_date:", formattedDate);
 
   // Get date-based statistics from DB
-  const dbResults = await query<RowDataPacket[]>(`
+  const dbResults = await query<RowDataPacket[]>(
+    `
     SELECT 
       DATE(issue_date) AS date,
       COUNT(*) AS count,
@@ -46,41 +46,46 @@ export async function fetchIdCardStatsPerDate(year: string, date: string) {
       DATE(issue_date)
     ORDER BY 
       date
-  `, [year, formattedDate]);
+  `,
+    [year, formattedDate]
+  );
 
   // Only include results with count > 0
   return dbResults
     .filter((row) => row.count > 0 && row.date !== null)
     .map((row) => {
-      const formattedDisplayDate = format(new Date(row.date), 'dd-MM-yyyy');
-      
+      const formattedDisplayDate = format(new Date(row.date), "dd-MM-yyyy");
+
       return {
         date: formattedDisplayDate,
         count: row.count,
-        issue_ids: row.issue_ids?.split(',').map(Number) || []
+        issue_ids: row.issue_ids?.split(",").map(Number) || [],
       };
     });
 }
 
-import ExcelJS from 'exceljs';
+import ExcelJS from "exceljs";
 
 /**
  * Generate Excel for ID cards issued on a specific date
  * Only includes entries where issue_status = 'ISSUED'
  */
-import { format as formatDate } from 'date-fns';
+import { format as formatDate } from "date-fns";
 
-export async function downloadIdCardDetailsByDate(date: string): Promise<ArrayBuffer | Uint8Array> {
-  console.log('fired download by date');
+export async function downloadIdCardDetailsByDate(
+  date: string
+): Promise<ArrayBuffer | Uint8Array> {
+  console.log("fired download by date");
   // Robust date parsing
   let formattedDate = date;
   if (/^\d{2}-\d{2}-\d{4}$/.test(date)) {
-    const [dd, mm, yyyy] = date.split('-');
+    const [dd, mm, yyyy] = date.split("-");
     formattedDate = `${yyyy}-${mm}-${dd}`;
   }
-  console.log('Formatted issue_date:', formattedDate);
+  console.log("Formatted issue_date:", formattedDate);
 
-  const results = await query<RowDataPacket[]>(`
+  const results = await query<RowDataPacket[]>(
+    `
     SELECT 
       i.id,
       i.expiry_date,
@@ -98,18 +103,28 @@ export async function downloadIdCardDetailsByDate(date: string): Promise<ArrayBu
       i.issue_date = ?
       AND i.issue_status = 'ISSUED'
     ORDER BY i.created_at
-  `, [formattedDate]);
+  `,
+    [formattedDate]
+  );
 
   const workbook = new ExcelJS.Workbook();
-  const sheet = workbook.addWorksheet('ID Card Details');
+  const sheet = workbook.addWorksheet("ID Card Details");
 
   // ✅ Corrected header
   sheet.addRow([
-    'ID', 'Name', 'Phone', 'Blood Group', 'Course', 'UID',
-    'Expiry Date', 'Status', 'Remarks', 'Created At'
+    "ID",
+    "Name",
+    "Phone",
+    "Blood Group",
+    "Course",
+    "UID",
+    "Expiry Date",
+    "Status",
+    "Remarks",
+    "Created At",
   ]);
 
-  results.forEach(row => {
+  results.forEach((row) => {
     sheet.addRow([
       row.id,
       row.name,
@@ -117,13 +132,16 @@ export async function downloadIdCardDetailsByDate(date: string): Promise<ArrayBu
       row.blood_group_name,
       row.course_name,
       row.codeNumber,
-      row.expiry_date ? formatDate(new Date(row.expiry_date), 'dd-MM-yyyy') : '',
+      row.expiry_date
+        ? formatDate(new Date(row.expiry_date), "dd-MM-yyyy")
+        : "",
       row.issue_status,
       row.remarks,
-      row.created_at ? formatDate(new Date(row.created_at), 'dd-MM-yyyy HH:mm:ss') : '',
+      row.created_at
+        ? formatDate(new Date(row.created_at), "dd-MM-yyyy HH:mm:ss")
+        : "",
     ]);
   });
 
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
-
