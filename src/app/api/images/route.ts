@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
             // Define fixed crop area
             const x = 250;
             const y = 307;
-            const width = 240;
+            const width = 230;
             const height = 250;
 
             // Process the image with sharp
