@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
             }
 
             // Define fixed crop area
-            const x = 200;
-            const y = 265;
-            const width = 260;
-            const height = 265;
+            const x = 245;
+            const y = 307;
+            const width = 250;
+            const height = 260;
 
             // Process the image with sharp
             let processedImage = sharp(imagePath)

@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
           if (!metadata.width || !metadata.height) continue;
 
           const imageStream = sharp(filePath)
-            .extract({ left: 200, top: 265, width: 260, height: 265 }) // Crop area
+            .extract({ left: 245, top: 307, width: 250, height: 260 }) // Crop area
             [outputFormat as "png" | "jpeg" | "webp"]({ quality }); // Convert format
 
           archive.append(imageStream, {
