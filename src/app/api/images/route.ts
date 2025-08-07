@@ -56,11 +56,11 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Define fixed crop area
-      const x = 200;
-      const y = 265;
-      const width = 260;
-      const height = 265;
+            // Define fixed crop area
+            const x = 250;
+            const y = 307;
+            const width = 225;
+            const height = 250;
 
       // Process the image with sharp
       let processedImage = sharp(imagePath).extract({
