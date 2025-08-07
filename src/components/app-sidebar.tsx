@@ -38,7 +38,7 @@ const data = {
     {
       name: "BESC | ID Card Generate",
       logo: GalleryVerticalEnd,
-      plan: "#v2.6.0",
+      plan: "#v2.8.0",
     },
   ],
   navMain: [
