@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, use } from "react";
 import { useParams } from "next/navigation";
 
 import Webcam from "react-webcam";
@@ -184,7 +184,7 @@ export default function Page() {
       toast.error("Please enter a valid 10-digit UID!!");
       return;
     }
-    
+
     setUserDetails(null);
     setNotFound(false);
     setLoading(true);
@@ -204,11 +204,15 @@ export default function Page() {
         setNotFound(false);
 
         // Check if ID card already exists for this student
+        console.log(
+          `Fetching ID card issues for student ID: ${data.content[0].id}`
+        );
         const idCardRes = await fetch(
           `${BASE_PATH}/api/id-card-issue?student_id=${data.content[0].id}`
         );
         if (idCardRes.ok) {
           const idCardData = await idCardRes.json();
+          console.log("idCardData:", idCardData);
           if (idCardData.data && idCardData.data.length > 0) {
             setIdCardIssues(idCardData.data);
             setHasExistingIdCard(true);
@@ -226,7 +230,10 @@ export default function Page() {
             try {
               // console.log("Fetching existing image from API...");
               const imageRes = await fetch(
-                `${BASE_PATH}/api/images?uid=${searchValue}&crop=true`
+                `${BASE_PATH}/api/images?uid=${searchValue}&crop=true`,
+                {
+                  cache: "no-store", // Ensure fresh fetch
+                }
               );
               // console.log("Image API response status:", imageRes.status);
               if (imageRes.ok) {
@@ -241,7 +248,8 @@ export default function Page() {
                 // Fallback: try to get the original image without cropping
                 try {
                   const fallbackRes = await fetch(
-                    `${BASE_PATH}/api/images?uid=${searchValue}`
+                    `${BASE_PATH}/api/images?uid=${searchValue}`,
+                    { cache: "no-store" } // Ensure fresh fetch
                   );
                   if (fallbackRes.ok) {
                     const fallbackBlob = await fallbackRes.blob();
@@ -308,411 +316,424 @@ export default function Page() {
     fetchTemplates();
   }, [templates, fetchTemplates]);
 
-  const generateIDCard = useCallback(async () => {
-    const imageRes = hasExistingIdCard
-      ? await fetch(`${BASE_PATH}/api/images?uid=${searchValue}&crop=true`)
-      : null;
-    if (imageRes && imageRes.ok) {
-      const imageBlob = await imageRes.blob();
-      const imageUrl = URL.createObjectURL(imageBlob);
-      setCapturedImage(imageUrl);
-    }
+  const generateIDCard = useCallback(
+    async (byPassExistingIdCard?: boolean) => {
+      if (byPassExistingIdCard !== true) {
+        const imageRes = hasExistingIdCard
+          ? await fetch(
+              `${BASE_PATH}/api/images?uid=${searchValue}&crop=true`,
+              { cache: "no-store" }
+            )
+          : null;
+        if (imageRes && imageRes.ok) {
+          const imageBlob = await imageRes.blob();
+          const imageUrl = URL.createObjectURL(imageBlob);
+          setCapturedImage(imageUrl);
+        }
+      }
+      // console.log("Generating ID card")
+      // console.log("Captured image:", capturedImage)
+      // console.log("Canvas:", canvasRef.current)
+      // console.log("Preview URL:", previewUrl)
+      // console.log("User details:", userDetails)
+      // console.log("Has existing ID card:", hasExistingIdCard)
 
-    // console.log("Generating ID card")
-    // console.log("Captured image:", capturedImage)
-    // console.log("Canvas:", canvasRef.current)
-    // console.log("Preview URL:", previewUrl)
-    // console.log("User details:", userDetails)
-    // console.log("Has existing ID card:", hasExistingIdCard)
+      if (!capturedImage || !canvasRef.current || !previewUrl) {
+        console.log("No captured image or canvas or preview URL");
+        return;
+      }
 
-    if (!capturedImage || !canvasRef.current || !previewUrl) {
-      console.log("No captured image or canvas or preview URL");
-      return;
-    }
+      // Guard for photoDimension
+      if (
+        !positions.photoDimension ||
+        positions.photoDimension.x === undefined ||
+        positions.photoDimension.y === undefined ||
+        positions.photoDimension.width === undefined ||
+        positions.photoDimension.height === undefined
+      ) {
+        console.log("Invalid photoDimension", positions.photoDimension);
+        return;
+      }
 
-    // Guard for photoDimension
-    if (
-      !positions.photoDimension ||
-      positions.photoDimension.x === undefined ||
-      positions.photoDimension.y === undefined ||
-      positions.photoDimension.width === undefined ||
-      positions.photoDimension.height === undefined
-    ) {
-      console.log("Invalid photoDimension", positions.photoDimension);
-      return;
-    }
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        console.log("No context");
+        return;
+      }
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      console.log("No context");
-      return;
-    }
+      // Set canvas dimensions to match the real-world ID card size at 300 DPI (5.4cm x 8.5cm)
+      // 1 inch = 2.54 cm, so 5.4cm = 2.126in, 8.5cm = 3.346in
+      // 2.126 * 300 = 638px, 3.346 * 300 = 1004px
+      canvas.width = 638;
+      canvas.height = 1004;
 
-    // Set canvas dimensions to match the real-world ID card size at 300 DPI (5.4cm x 8.5cm)
-    // 1 inch = 2.54 cm, so 5.4cm = 2.126in, 8.5cm = 3.346in
-    // 2.126 * 300 = 638px, 3.346 * 300 = 1004px
-    canvas.width = 638;
-    canvas.height = 1004;
-
-    // Load the clean template image
-    const templateImg =
-      typeof window !== "undefined" ? new window.Image() : new Image();
-    templateImg.crossOrigin = "anonymous";
-
-    templateImg.onload = async () => {
-      console.log("Template image loaded successfully");
-      console.log(
-        "Template image dimensions:",
-        templateImg.width,
-        "x",
-        templateImg.height
-      );
-      console.log("Template image src:", templateImg.src);
-      // Clear canvas first
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Draw the clean template background
-      ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
-      console.log("Template background drawn");
-
-      // Load and draw the captured photo
-      const userImg =
+      // Load the clean template image
+      const templateImg =
         typeof window !== "undefined" ? new window.Image() : new Image();
+      templateImg.crossOrigin = "anonymous";
 
-      userImg.onload = async () => {
-        console.log("User image loaded successfully");
+      templateImg.onload = async () => {
+        console.log("Template image loaded successfully");
         console.log(
-          "User image dimensions:",
-          userImg.width,
+          "Template image dimensions:",
+          templateImg.width,
           "x",
-          userImg.height
+          templateImg.height
         );
-        // Photo placement coordinates for the clean template
-        const photoX = positions.photoDimension.x; //  photoRect.x // X position of photo area
-        const photoY = positions.photoDimension.y; // photoRect.y // Y position of photo area
-        const photoWidth = positions.photoDimension.width; // photoRect.width // Width of photo area
-        const photoHeight = positions.photoDimension.height; // photoRect.height // Height of photo area
-        console.log("Photo placement:", {
-          photoX,
-          photoY,
-          photoWidth,
-          photoHeight,
-        });
+        console.log("Template image src:", templateImg.src);
+        // Clear canvas first
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Save context for clipping
-        ctx.save();
+        // Draw the clean template background
+        ctx.drawImage(templateImg, 0, 0, canvas.width, canvas.height);
+        console.log("Template background drawn");
 
-        // Create clipping path for photo area
-        ctx.beginPath();
-        ctx.rect(photoX, photoY, photoWidth, photoHeight);
-        ctx.clip();
+        // Load and draw the captured photo
+        const userImg =
+          typeof window !== "undefined" ? new window.Image() : new Image();
 
-        // Calculate aspect ratio to fit photo properly
-        const imgAspect = userImg.width / userImg.height;
-        const areaAspect = photoWidth / photoHeight;
+        userImg.onload = async () => {
+          console.log("User image loaded successfully");
+          console.log(
+            "User image dimensions:",
+            userImg.width,
+            "x",
+            userImg.height
+          );
+          // Photo placement coordinates for the clean template
+          const photoX = positions.photoDimension.x; //  photoRect.x // X position of photo area
+          const photoY = positions.photoDimension.y; // photoRect.y // Y position of photo area
+          const photoWidth = positions.photoDimension.width; // photoRect.width // Width of photo area
+          const photoHeight = positions.photoDimension.height; // photoRect.height // Height of photo area
+          console.log("Photo placement:", {
+            photoX,
+            photoY,
+            photoWidth,
+            photoHeight,
+          });
 
-        let drawWidth, drawHeight, drawX, drawY;
-
-        if (imgAspect > areaAspect) {
-          // Image is wider, fit to height
-          drawHeight = photoHeight;
-          drawWidth = photoHeight * imgAspect;
-          drawX = photoX - (drawWidth - photoWidth) / 2;
-          drawY = photoY;
-        } else {
-          // Image is taller, fit to width
-          drawWidth = photoWidth;
-          drawHeight = photoWidth / imgAspect;
-          drawX = photoX;
-          drawY = photoY - (drawHeight - photoHeight) / 2;
-        }
-
-        // Draw the user photo
-        ctx.drawImage(userImg, drawX, drawY, drawWidth, drawHeight);
-
-        // Restore context
-        ctx.restore();
-
-        // Add user details text with proper positioning for the clean template
-        ctx.fillStyle = "#000000";
-        ctx.textAlign = "center";
-
-        // Name
-        if (userDetails && userDetails.name) {
-          const blueBarWidth = Math.round(80 * SCALE_X); // width of the blue bar with logo
-          const rightMargin = Math.round(20 * SCALE_X);
-          const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
-          const centerX = blueBarWidth + whiteAreaWidth / 2;
+          // Save context for clipping
           ctx.save();
+
+          // Create clipping path for photo area
           ctx.beginPath();
-          ctx.rect(
-            blueBarWidth,
-            positions.nameCoordinates.y - Math.round(40 * SCALE_Y),
-            whiteAreaWidth,
-            Math.round(50 * SCALE_Y)
-          );
+          ctx.rect(photoX, photoY, photoWidth, photoHeight);
           ctx.clip();
-          ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`;
-          ctx.textAlign = "center";
-          ctx.fillText(
-            userDetails.name.toUpperCase(),
-            centerX,
-            positions.nameCoordinates.y,
-            whiteAreaWidth
-          );
+
+          // Calculate aspect ratio to fit photo properly
+          const imgAspect = userImg.width / userImg.height;
+          const areaAspect = photoWidth / photoHeight;
+
+          let drawWidth, drawHeight, drawX, drawY;
+
+          if (imgAspect > areaAspect) {
+            // Image is wider, fit to height
+            drawHeight = photoHeight;
+            drawWidth = photoHeight * imgAspect;
+            drawX = photoX - (drawWidth - photoWidth) / 2;
+            drawY = photoY;
+          } else {
+            // Image is taller, fit to width
+            drawWidth = photoWidth;
+            drawHeight = photoWidth / imgAspect;
+            drawX = photoX;
+            drawY = photoY - (drawHeight - photoHeight) / 2;
+          }
+
+          // Draw the user photo
+          ctx.drawImage(userImg, drawX, drawY, drawWidth, drawHeight);
+
+          // Restore context
           ctx.restore();
-        }
-        // UID (centered in white area, with label)
-        if (userDetails && userDetails.codeNumber) {
-          const blueBarWidth = Math.round(80 * SCALE_X);
-          const rightMargin = Math.round(20 * SCALE_X);
-          const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
-          const centerX = blueBarWidth + whiteAreaWidth / 2;
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(
-            blueBarWidth,
-            positions.uidCoordinates.y - Math.round(20 * SCALE_Y),
-            whiteAreaWidth,
-            Math.round(40 * SCALE_Y)
-          );
-          ctx.clip();
-          ctx.font = `bold ${Math.round(32 * SCALE_Y)}px Calibri`;
+
+          // Add user details text with proper positioning for the clean template
+          ctx.fillStyle = "#000000";
           ctx.textAlign = "center";
-          ctx.fillText(
-            `${userDetails.codeNumber}`,
-            centerX,
-            positions.uidCoordinates.y,
-            whiteAreaWidth
-          );
-          ctx.restore();
-        }
-        // Valid Till Date (centered in white area)
-        if (validTillDate) {
-          const blueBarWidth = Math.round(80 * SCALE_X);
-          const rightMargin = Math.round(27 * SCALE_X);
-          const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
-          const centerX = blueBarWidth + whiteAreaWidth / 2;
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(
-            blueBarWidth,
-            positions.validTillDateCoordinates.y - Math.round(20 * SCALE_Y),
-            whiteAreaWidth,
-            Math.round(40 * SCALE_Y)
-          );
-          ctx.clip();
-          ctx.font = `bold ${Math.round(21 * SCALE_Y)}px Calibri`;
-          ctx.textAlign = "center";
-          ctx.fillText(
-            `Valid Till: ${validTillDate}`,
-            centerX,
-            positions.validTillDateCoordinates.y,
-            whiteAreaWidth
-          );
-          ctx.restore();
-        }
 
-        // Course (left-aligned with yellow arrow)
-        let courseText =
-          userDetails && userDetails.courseName
-            ? `${userDetails.courseName}${
-                userDetails.shiftName ? ` ${userDetails.shiftName}` : ""
-              }`
-            : "";
-        if (
-          courseText
-            .toUpperCase()
-            .trim()
-            .includes("B.A. JOURNALISM AND MASS COMM (H)")
-        ) {
-          courseText = `B.A. JMC (H) ${
-            userDetails?.shiftName ? `${userDetails.shiftName}` : ""
-          }`;
-        }
-        if (
-          courseText.toUpperCase().trim().includes("B.A. POLITICAL SCIENCE (H)")
-        ) {
-          courseText = `B.A. Pol. Sci. (H) ${
-            userDetails?.shiftName ? `${userDetails.shiftName}` : ""
-          }`;
-        }
-        if (
-          courseText.toUpperCase().trim().includes("B.SC. COMPUTER SCIENCE (H)")
-        ) {
-          courseText = `B.Sc. Comp. Sci. (H) ${
-            userDetails?.shiftName ? `${userDetails.shiftName}` : ""
-          }`;
-        } else if (
-          courseText.toUpperCase().trim().includes("B.SC. ECONOMICS (H)")
-        ) {
-          courseText = `B.Sc. Eco. (H) ${
-            userDetails?.shiftName ? `${userDetails.shiftName}` : ""
-          }`;
-        } else if (
-          courseText.toUpperCase().trim().includes("B.SC. MATHEMATICS (H)")
-        ) {
-          courseText = `B.Sc. Maths. (H) ${
-            userDetails?.shiftName ? `${userDetails.shiftName}` : ""
-          }`;
-        } else if (
-          courseText.toUpperCase().trim().includes("B.A. SOCIOLOGY (H)")
-        ) {
-          courseText = `B.A. Sociology (H) ${
-            userDetails?.shiftName ? `${userDetails.shiftName}` : ""
-          }`;
-        }
+          // Name
+          if (userDetails && userDetails.name) {
+            const blueBarWidth = Math.round(80 * SCALE_X); // width of the blue bar with logo
+            const rightMargin = Math.round(20 * SCALE_X);
+            const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
+            const centerX = blueBarWidth + whiteAreaWidth / 2;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(
+              blueBarWidth,
+              positions.nameCoordinates.y - Math.round(40 * SCALE_Y),
+              whiteAreaWidth,
+              Math.round(50 * SCALE_Y)
+            );
+            ctx.clip();
+            ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`;
+            ctx.textAlign = "center";
+            ctx.fillText(
+              userDetails.name.toUpperCase(),
+              centerX,
+              positions.nameCoordinates.y,
+              whiteAreaWidth
+            );
+            ctx.restore();
+          }
+          // UID (centered in white area, with label)
+          if (userDetails && userDetails.codeNumber) {
+            const blueBarWidth = Math.round(80 * SCALE_X);
+            const rightMargin = Math.round(20 * SCALE_X);
+            const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
+            const centerX = blueBarWidth + whiteAreaWidth / 2;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(
+              blueBarWidth,
+              positions.uidCoordinates.y - Math.round(20 * SCALE_Y),
+              whiteAreaWidth,
+              Math.round(40 * SCALE_Y)
+            );
+            ctx.clip();
+            ctx.font = `bold ${Math.round(32 * SCALE_Y)}px Calibri`;
+            ctx.textAlign = "center";
+            ctx.fillText(
+              `${userDetails.codeNumber}`,
+              centerX,
+              positions.uidCoordinates.y,
+              whiteAreaWidth
+            );
+            ctx.restore();
+          }
+          // Valid Till Date (centered in white area)
+          if (validTillDate) {
+            const blueBarWidth = Math.round(80 * SCALE_X);
+            const rightMargin = Math.round(27 * SCALE_X);
+            const whiteAreaWidth = canvas.width - blueBarWidth - rightMargin;
+            const centerX = blueBarWidth + whiteAreaWidth / 2;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(
+              blueBarWidth,
+              positions.validTillDateCoordinates.y - Math.round(20 * SCALE_Y),
+              whiteAreaWidth,
+              Math.round(40 * SCALE_Y)
+            );
+            ctx.clip();
+            ctx.font = `bold ${Math.round(21 * SCALE_Y)}px Calibri`;
+            ctx.textAlign = "center";
+            ctx.fillText(
+              `Valid Till: ${validTillDate}`,
+              centerX,
+              positions.validTillDateCoordinates.y,
+              whiteAreaWidth
+            );
+            ctx.restore();
+          }
 
-        if (courseText) {
-          const arrowLeftX = Math.round(110 * SCALE_X); // Adjust this value to match the yellow arrow's left edge in the template
-          ctx.font = `bold ${Math.round(27 * SCALE_Y)}px Calibri`;
-          ctx.textAlign = "left";
-          ctx.fillText(courseText, arrowLeftX, positions.courseCoordinates.y);
-        }
+          // Course (left-aligned with yellow arrow)
+          let courseText =
+            userDetails && userDetails.courseName
+              ? `${userDetails.courseName}${
+                  userDetails.shiftName ? ` ${userDetails.shiftName}` : ""
+                }`
+              : "";
+          if (
+            courseText
+              .toUpperCase()
+              .trim()
+              .includes("B.A. JOURNALISM AND MASS COMM (H)")
+          ) {
+            courseText = `B.A. JMC (H) ${
+              userDetails?.shiftName ? `${userDetails.shiftName}` : ""
+            }`;
+          }
+          if (
+            courseText
+              .toUpperCase()
+              .trim()
+              .includes("B.A. POLITICAL SCIENCE (H)")
+          ) {
+            courseText = `B.A. Pol. Sci. (H) ${
+              userDetails?.shiftName ? `${userDetails.shiftName}` : ""
+            }`;
+          }
+          if (
+            courseText
+              .toUpperCase()
+              .trim()
+              .includes("B.SC. COMPUTER SCIENCE (H)")
+          ) {
+            courseText = `B.Sc. Comp. Sci. (H) ${
+              userDetails?.shiftName ? `${userDetails.shiftName}` : ""
+            }`;
+          } else if (
+            courseText.toUpperCase().trim().includes("B.SC. ECONOMICS (H)")
+          ) {
+            courseText = `B.Sc. Eco. (H) ${
+              userDetails?.shiftName ? `${userDetails.shiftName}` : ""
+            }`;
+          } else if (
+            courseText.toUpperCase().trim().includes("B.SC. MATHEMATICS (H)")
+          ) {
+            courseText = `B.Sc. Maths. (H) ${
+              userDetails?.shiftName ? `${userDetails.shiftName}` : ""
+            }`;
+          } else if (
+            courseText.toUpperCase().trim().includes("B.A. SOCIOLOGY (H)")
+          ) {
+            courseText = `B.A. Sociology (H) ${
+              userDetails?.shiftName ? `${userDetails.shiftName}` : ""
+            }`;
+          }
 
-        // Mobile (left-aligned with yellow arrow)
-        if (userDetails) {
-          const arrowLeftX = Math.round(110 * SCALE_X); // Same as above
-          ctx.font = `bold ${Math.round(27 * SCALE_Y)}px Calibri`;
-          ctx.textAlign = "left";
-          ctx.fillText(
-            `${userDetails.emercontactpersonmob ?? ""}`,
-            arrowLeftX,
-            positions.mobileCoordinates.y
-          );
-        }
+          if (courseText) {
+            const arrowLeftX = Math.round(110 * SCALE_X); // Adjust this value to match the yellow arrow's left edge in the template
+            ctx.font = `bold ${Math.round(27 * SCALE_Y)}px Calibri`;
+            ctx.textAlign = "left";
+            ctx.fillText(courseText, arrowLeftX, positions.courseCoordinates.y);
+          }
 
-        // Blood Group
-        if (userDetails && userDetails.bloodGroupName) {
-          ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`;
-          ctx.fillText(
-            `${userDetails.bloodGroupName}`,
-            positions.bloodGroupCoordinates.x,
-            positions.bloodGroupCoordinates.y
-          );
-        }
+          // Mobile (left-aligned with yellow arrow)
+          if (userDetails) {
+            const arrowLeftX = Math.round(110 * SCALE_X); // Same as above
+            ctx.font = `bold ${Math.round(27 * SCALE_Y)}px Calibri`;
+            ctx.textAlign = "left";
+            ctx.fillText(
+              `${userDetails.emercontactpersonmob ?? ""}`,
+              arrowLeftX,
+              positions.mobileCoordinates.y
+            );
+          }
 
-        // Sports Quota
-        if (
-          userDetails &&
-          userDetails.quotatype &&
-          userDetails.quotatype.toLowerCase().includes("sports")
-        ) {
-          ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`;
-          ctx.textAlign = "left";
-          ctx.fillText(
-            "SQ",
-            positions.sportsQuotaCoordinates.x,
-            positions.sportsQuotaCoordinates.y
-          );
-          ctx.textAlign = "center";
-        }
+          // Blood Group
+          if (userDetails && userDetails.bloodGroupName) {
+            ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`;
+            ctx.fillText(
+              `${userDetails.bloodGroupName}`,
+              positions.bloodGroupCoordinates.x,
+              positions.bloodGroupCoordinates.y
+            );
+          }
 
-        // QR Code (containing UID)
-        if (userDetails && userDetails.codeNumber) {
-          try {
-            console.log("Generating QR code for:", userDetails.codeNumber);
-            const qrDataUrl = await QRCode.toDataURL(userDetails.codeNumber, {
-              margin: 0,
-              width: positions.qrcodeSize,
-            });
-            const qrImg = new window.Image();
-            qrImg.onload = () => {
-              console.log("QR code image loaded");
-              ctx.drawImage(
-                qrImg,
-                positions.qrcodeCoordinates.x,
-                positions.qrcodeCoordinates.y,
-                positions.qrcodeSize,
-                positions.qrcodeSize
-              );
-              // Convert canvas to image and set it
-              const generatedImageUrl = canvas.toDataURL("image/png", 1.0);
-              console.log(
-                "Generated ID card URL (with QR):",
-                generatedImageUrl.substring(0, 100) + "..."
-              );
-              setGeneratedCard(generatedImageUrl);
-            };
-            qrImg.onerror = () => {
-              console.error("Failed to load QR code image");
+          // Sports Quota
+          if (
+            userDetails &&
+            userDetails.quotatype &&
+            userDetails.quotatype.toLowerCase().includes("sports")
+          ) {
+            ctx.font = `bold ${Math.round(30 * SCALE_Y)}px Calibri`;
+            ctx.textAlign = "left";
+            ctx.fillText(
+              "SQ",
+              positions.sportsQuotaCoordinates.x,
+              positions.sportsQuotaCoordinates.y
+            );
+            ctx.textAlign = "center";
+          }
+
+          // QR Code (containing UID)
+          if (userDetails && userDetails.codeNumber) {
+            try {
+              console.log("Generating QR code for:", userDetails.codeNumber);
+              const qrDataUrl = await QRCode.toDataURL(userDetails.codeNumber, {
+                margin: 0,
+                width: positions.qrcodeSize,
+              });
+              const qrImg = new window.Image();
+              qrImg.onload = () => {
+                console.log("QR code image loaded");
+                ctx.drawImage(
+                  qrImg,
+                  positions.qrcodeCoordinates.x,
+                  positions.qrcodeCoordinates.y,
+                  positions.qrcodeSize,
+                  positions.qrcodeSize
+                );
+                // Convert canvas to image and set it
+                const generatedImageUrl = canvas.toDataURL("image/png", 1.0);
+                console.log(
+                  "Generated ID card URL (with QR):",
+                  generatedImageUrl.substring(0, 100) + "..."
+                );
+                setGeneratedCard(generatedImageUrl);
+              };
+              qrImg.onerror = () => {
+                console.error("Failed to load QR code image");
+                // Fallback: generate without QR code
+                const generatedImageUrl = canvas.toDataURL("image/png", 1.0);
+                console.log(
+                  "Generated ID card URL (without QR):",
+                  generatedImageUrl.substring(0, 100) + "..."
+                );
+                setGeneratedCard(generatedImageUrl);
+              };
+              qrImg.src = qrDataUrl;
+              return; // Wait for QR to load before setting image
+            } catch (err) {
+              console.error("Failed to generate QR code", err);
               // Fallback: generate without QR code
               const generatedImageUrl = canvas.toDataURL("image/png", 1.0);
               console.log(
-                "Generated ID card URL (without QR):",
+                "Generated ID card URL (QR error fallback):",
                 generatedImageUrl.substring(0, 100) + "..."
               );
               setGeneratedCard(generatedImageUrl);
-            };
-            qrImg.src = qrDataUrl;
-            return; // Wait for QR to load before setting image
-          } catch (err) {
-            console.error("Failed to generate QR code", err);
-            // Fallback: generate without QR code
-            const generatedImageUrl = canvas.toDataURL("image/png", 1.0);
-            console.log(
-              "Generated ID card URL (QR error fallback):",
-              generatedImageUrl.substring(0, 100) + "..."
-            );
-            setGeneratedCard(generatedImageUrl);
+            }
           }
-        }
 
-        // Convert canvas to image and set it (if no QR code)
-        const generatedImageUrl = canvas.toDataURL("image/png", 1.0);
-        console.log(
-          "Generated ID card URL:",
-          generatedImageUrl.substring(0, 100) + "..."
-        );
-        setGeneratedCard(generatedImageUrl);
+          // Convert canvas to image and set it (if no QR code)
+          const generatedImageUrl = canvas.toDataURL("image/png", 1.0);
+          console.log(
+            "Generated ID card URL:",
+            generatedImageUrl.substring(0, 100) + "..."
+          );
+          setGeneratedCard(generatedImageUrl);
+        };
+
+        userImg.onerror = () => {
+          console.error("Failed to load user image");
+          console.error("User image src:", userImg.src);
+        };
+
+        userImg.src = capturedImage;
       };
 
-      userImg.onerror = () => {
-        console.error("Failed to load user image");
-        console.error("User image src:", userImg.src);
+      templateImg.onerror = () => {
+        console.error("Failed to load template image");
+        console.error("Template image src:", templateImg.src);
+        console.error("Template image error details:", templateImg);
+        // Try fallback template
+        console.log("Trying fallback template...");
+        const fallbackUrl = `${BASE_PATH}/id-template-new-frontend.jpeg`;
+        console.log("Fallback template URL:", fallbackUrl);
+        templateImg.src = fallbackUrl;
       };
 
-      userImg.src = capturedImage;
-    };
+      // Use the clean template image
+      // templateImg.src = `${process.env.NEXT_PUBLIC_BASE_PATH}/id-template-new-frontend.jpeg`
+      console.log("Setting template image src to:", previewUrl);
+      console.log("Template image object:", templateImg);
+      templateImg.src = previewUrl;
+    },
+    [
+      SCALE_X,
+      SCALE_Y,
+      hasExistingIdCard,
 
-    templateImg.onerror = () => {
-      console.error("Failed to load template image");
-      console.error("Template image src:", templateImg.src);
-      console.error("Template image error details:", templateImg);
-      // Try fallback template
-      console.log("Trying fallback template...");
-      const fallbackUrl = `${BASE_PATH}/id-template-new-frontend.jpeg`;
-      console.log("Fallback template URL:", fallbackUrl);
-      templateImg.src = fallbackUrl;
-    };
-
-    // Use the clean template image
-    // templateImg.src = `${process.env.NEXT_PUBLIC_BASE_PATH}/id-template-new-frontend.jpeg`
-    console.log("Setting template image src to:", previewUrl);
-    console.log("Template image object:", templateImg);
-    templateImg.src = previewUrl;
-  }, [
-    SCALE_X,
-    SCALE_Y,  
-    hasExistingIdCard,
-
-    searchValue,
-    capturedImage,
-    userDetails,
-    previewUrl,
-    validTillDate,
-    positions.photoDimension,
-    positions.nameCoordinates,
-    positions.courseCoordinates,
-    positions.uidCoordinates,
-    positions.mobileCoordinates,
-    positions.bloodGroupCoordinates,
-    positions.sportsQuotaCoordinates,
-    positions.validTillDateCoordinates,
-    positions.qrcodeCoordinates,
-    positions.qrcodeSize,
-  ]);
+      searchValue,
+      capturedImage,
+      userDetails,
+      previewUrl,
+      validTillDate,
+      positions.photoDimension,
+      positions.nameCoordinates,
+      positions.courseCoordinates,
+      positions.uidCoordinates,
+      positions.mobileCoordinates,
+      positions.bloodGroupCoordinates,
+      positions.sportsQuotaCoordinates,
+      positions.validTillDateCoordinates,
+      positions.qrcodeCoordinates,
+      positions.qrcodeSize,
+    ]
+  );
 
   const capture = useCallback(() => {
     // Always enable capture, crop to green box
@@ -745,12 +766,10 @@ export default function Page() {
         setCapturedImage(croppedImage);
         setGeneratedCard(null);
         setShowWebcam(false);
-        generateIDCard();
+        generateIDCard(true);
       }
     }
   }, [webcamRef, generateIDCard]);
-
-  
 
   useEffect(() => {
     console.log("useEffect triggered for ID card generation");
@@ -863,6 +882,72 @@ export default function Page() {
       console.log(error);
       setSaveStatus("error");
       toast.error("Failed to save photo. Try again.");
+    } finally {
+      const idCardRes = await fetch(
+        `${BASE_PATH}/api/id-card-issue?student_id=${idCardIssues[0].student_id_fk}`
+      );
+      if (idCardRes.ok) {
+        const idCardData = await idCardRes.json();
+        console.log("idCardData:", idCardData);
+        if (idCardData.data && idCardData.data.length > 0) {
+          setIdCardIssues(idCardData.data);
+          setHasExistingIdCard(true);
+
+          setSelectedTemplate(templates[0]);
+          setPositions(templates[0]);
+          // setQrcodeSize(templates[0].qrcodeSize);
+          // setPhotoRect(templates[0].photoDimension);
+
+          const previewUrlValue = `${BASE_PATH}/api/id-card-template/${templates[0].id}`;
+          // console.log("Setting preview URL:", previewUrlValue);
+          setPreviewUrl(previewUrlValue);
+
+          // Get the captured image from the API
+          try {
+            // console.log("Fetching existing image from API...");
+            const imageRes = await fetch(
+              `${BASE_PATH}/api/images?uid=${searchValue}&crop=true`,
+              {
+                cache: "no-store", // Ensure fresh fetch
+              }
+            );
+            // console.log("Image API response status:", imageRes.status);
+            if (imageRes.ok) {
+              const imageBlob = await imageRes.blob();
+              const imageUrl = URL.createObjectURL(imageBlob);
+              // console.log("Setting captured image from API:", imageUrl);
+              setCapturedImage(imageUrl);
+            } else {
+              // console.error("Image API returned error status:", imageRes.status);
+              // const errorText = await imageRes.text();
+              // console.error("Error response:", errorText);
+              // Fallback: try to get the original image without cropping
+              try {
+                const fallbackRes = await fetch(
+                  `${BASE_PATH}/api/images?uid=${searchValue}`,
+                  { cache: "no-store" } // Ensure fresh fetch
+                );
+                if (fallbackRes.ok) {
+                  const fallbackBlob = await fallbackRes.blob();
+                  const fallbackUrl = URL.createObjectURL(fallbackBlob);
+                  // console.log("Setting fallback image:", fallbackUrl);
+                  setCapturedImage(fallbackUrl);
+                }
+              } catch (fallbackError) {
+                console.error(
+                  "Fallback image fetch also failed:",
+                  fallbackError
+                );
+              }
+            }
+          } catch (error) {
+            console.error("Failed to fetch existing image:", error);
+          }
+        } else {
+          setIdCardIssues([]);
+          setHasExistingIdCard(false);
+        }
+      }
     }
     setSaving(false);
   };
@@ -993,7 +1078,7 @@ export default function Page() {
     };
     const intervalId = setInterval(detect, 400); // Check every 400ms
     return () => clearInterval(intervalId);
-  }, [showWebcam, modelsLoaded, setFaceDetected,setNumFaces]);
+  }, [showWebcam, modelsLoaded, setFaceDetected, setNumFaces]);
 
   return (
     <>
@@ -1004,12 +1089,11 @@ export default function Page() {
         </h2>
 
         {/* active: {JSON.stringify(userDetails?.active)} */}
-{/* searchValue: {JSON.stringify(searchValue)} */}
+        {/* searchValue: {JSON.stringify(searchValue)} */}
         <form
           onSubmit={handleSearchSubmit}
           className="flex items-center gap-2 mb-4"
         >
-          
           <Input
             placeholder="Enter student UID or code number"
             value={searchValue || ""}
@@ -1402,30 +1486,34 @@ export default function Page() {
                               />
                             )}
                           </div>
-                          <div className="mt-4 flex gap-2">
-                            <Button
-                              className="w-1/2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 shadow"
-                              onClick={() => setShowWebcam(true)}
-                              size="lg"
-                              disabled={hasExistingIdCard}
-                            >
-                              {hasExistingIdCard
-                                ? "Photo Already Captured"
-                                : capturedImage
-                                ? "Change Photo"
-                                : "Capture Photo"}
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                if (!generatedCard || showBack) return;
-                                const CARD_WIDTH_PX = 638;
-                                const CARD_HEIGHT_PX = 1004;
-                                const printWindow = window.open(
-                                  "",
-                                  "_blank",
-                                  `width=${CARD_WIDTH_PX},height=${CARD_HEIGHT_PX}`
-                                );
-                                printWindow?.document.write(`
+                          <div>
+                            <div className="mt-4 flex gap-2">
+                              <Button
+                                className="w-1/2 rounded-lg bg-gray-200 text-gray-800 hover:bg-gray-300 shadow"
+                                onClick={() => {
+                                  setShowWebcam(true);
+                                  // setHasExistingIdCard(false);
+                                }}
+                                size="lg"
+                                // disabled={hasExistingIdCard}
+                              >
+                                {hasExistingIdCard
+                                  ? "Photo Already Captured"
+                                  : capturedImage
+                                  ? "Change Photo"
+                                  : "Capture Photo"}
+                              </Button>
+                              <Button
+                                onClick={() => {
+                                  if (!generatedCard || showBack) return;
+                                  const CARD_WIDTH_PX = 638;
+                                  const CARD_HEIGHT_PX = 1004;
+                                  const printWindow = window.open(
+                                    "",
+                                    "_blank",
+                                    `width=${CARD_WIDTH_PX},height=${CARD_HEIGHT_PX}`
+                                  );
+                                  printWindow?.document.write(`
                                   <html>
                                     <head>
                                       <title>Print ID Card</title>
@@ -1459,25 +1547,45 @@ export default function Page() {
                                     </body>
                                   </html>
                                 `);
-                                printWindow?.document.close();
+                                  printWindow?.document.close();
+                                }}
+                                className={`w-1/2 rounded-lg ${
+                                  showBack || !generatedCard
+                                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                                }`}
+                                size="lg"
+                                disabled={showBack || !generatedCard}
+                              >
+                                {!showBack && generatedCard ? (
+                                  <>
+                                    <Camera className="w-4 h-4 mr-2" />
+                                    Print ID Card
+                                  </>
+                                ) : (
+                                  <span className="opacity-0">
+                                    Print ID Card
+                                  </span>
+                                )}
+                              </Button>
+                            </div>
+                            <Input
+                              type="file"
+                              className="mt-4 w-full"
+                              accept="image/*"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  const file = e.target.files[0];
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    setCapturedImage(reader.result as string);
+                                    setGeneratedCard(null);
+                                    generateIDCard(true);
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
                               }}
-                              className={`w-1/2 rounded-lg ${
-                                showBack || !generatedCard
-                                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                                  : "bg-blue-600 hover:bg-blue-700 text-white"
-                              }`}
-                              size="lg"
-                              disabled={showBack || !generatedCard}
-                            >
-                              {!showBack && generatedCard ? (
-                                <>
-                                  <Camera className="w-4 h-4 mr-2" />
-                                  Print ID Card
-                                </>
-                              ) : (
-                                <span className="opacity-0">Print ID Card</span>
-                              )}
-                            </Button>
+                            />
                           </div>
                           {/* New section for Type and Remarks */}
                           {hasExistingIdCard && (
@@ -1715,6 +1823,113 @@ export default function Page() {
                                   setGeneratedCard(null);
                                 });
                               toast.success("ID card issue deleted.");
+
+                              const idCardRes = await fetch(
+                                `${BASE_PATH}/api/id-card-issue?student_id=${idCardIssues[0].student_id_fk}`
+                              );
+                              if (idCardRes.ok) {
+                                const idCardData = await idCardRes.json();
+                                console.log("idCardData:", idCardData);
+                                if (
+                                  idCardData.data &&
+                                  idCardData.data.length > 0
+                                ) {
+                                  setIdCardIssues(idCardData.data);
+                                  setHasExistingIdCard(true);
+
+                                  setSelectedTemplate(templates[0]);
+                                  setPositions(templates[0]);
+                                  // setQrcodeSize(templates[0].qrcodeSize);
+                                  // setPhotoRect(templates[0].photoDimension);
+
+                                  const previewUrlValue = `${BASE_PATH}/api/id-card-template/${templates[0].id}`;
+                                  // console.log("Setting preview URL:", previewUrlValue);
+                                  setPreviewUrl(previewUrlValue);
+
+                                  // Get the captured image from the API
+                                  try {
+                                    // console.log("Fetching existing image from API...");
+                                    const imageRes = await fetch(
+                                      `${BASE_PATH}/api/images?uid=${searchValue}&crop=true`,
+                                      {
+                                        cache: "no-store", // Ensure fresh fetch
+                                      }
+                                    );
+                                    // console.log("Image API response status:", imageRes.status);
+                                    if (imageRes.ok) {
+                                      const imageBlob = await imageRes.blob();
+                                      const imageUrl =
+                                        URL.createObjectURL(imageBlob);
+                                      // console.log("Setting captured image from API:", imageUrl);
+                                      setCapturedImage(imageUrl);
+                                    } else {
+                                      // console.error("Image API returned error status:", imageRes.status);
+                                      // const errorText = await imageRes.text();
+                                      // console.error("Error response:", errorText);
+                                      // Fallback: try to get the original image without cropping
+                                      try {
+                                        const fallbackRes = await fetch(
+                                          `${BASE_PATH}/api/images?uid=${searchValue}`,
+                                          { cache: "no-store" } // Ensure fresh fetch
+                                        );
+                                        if (fallbackRes.ok) {
+                                          const fallbackBlob =
+                                            await fallbackRes.blob();
+                                          const fallbackUrl =
+                                            URL.createObjectURL(fallbackBlob);
+                                          // console.log("Setting fallback image:", fallbackUrl);
+                                          setCapturedImage(fallbackUrl);
+                                        }
+                                      } catch (fallbackError) {
+                                        console.error(
+                                          "Fallback image fetch also failed:",
+                                          fallbackError
+                                        );
+                                      }
+                                    }
+                                  } catch (error) {
+                                    console.error(
+                                      "Failed to fetch existing image:",
+                                      error
+                                    );
+                                  }
+                                } else {
+                                  setIdCardIssues([]);
+                                  setHasExistingIdCard(false);
+                                }
+                              }
+
+                              const imageRes = hasExistingIdCard
+                                ? await fetch(
+                                    `${BASE_PATH}/api/images?uid=${searchValue}&crop=true`,
+                                    { cache: "no-store" }
+                                  )
+                                : null;
+                              if (imageRes && imageRes.ok) {
+                                const imageBlob = await imageRes.blob();
+                                const imageUrl = URL.createObjectURL(imageBlob);
+                                setCapturedImage(imageUrl);
+                                generateIDCard(true);
+
+                                fetch(
+                                  `${BASE_PATH}/api/id-card-issue?student_id=${userDetails.id!}`
+                                )
+                                  .then((res) => res.json())
+                                  .then((data) => {
+                                    if (data.success) {
+                                      const issues = data.data || [];
+                                      setIdCardIssues(issues);
+                                      setHasExistingIdCard(issues.length > 0);
+                                    } else {
+                                      setIdCardIssues([]);
+                                      setHasExistingIdCard(false);
+                                    }
+                                  })
+                                  .catch(() => {
+                                    setIdCardIssues([]);
+                                    setHasExistingIdCard(false);
+                                  });
+                              }
                             } catch {
                               toast.error("Failed to delete ID card issue.");
                             }
