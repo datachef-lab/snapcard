@@ -46,13 +46,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: "student_id is required" }, { status: 400 });
   }
   try {
-    if (recent === "1") {
+    
       const recentIssue = await getRecentIdCardIssueByStudentId(Number(studentId));
       return NextResponse.json({ success: true, data: recentIssue });
-    } else {
-      const issues = await getIdCardIssuesByStudentId(Number(studentId));
-      return NextResponse.json({ success: true, data: issues });
-    }
+    
   } catch (error) {
     return NextResponse.json({ success: false, error: (error as Error)?.message || String(error) }, { status: 500 });
   }
