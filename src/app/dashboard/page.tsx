@@ -156,15 +156,16 @@ export default function Page() {
         // setQrcodeSize(templates[0].qrcodeSize);
         // setPhotoRect(templates[0].photoDimension);
 
-        const previewUrlValue = `${BASE_PATH}/api/id-card-template/${templates[0].id}`;
+        const previewUrlValue = `${BASE_PATH}/api/id-card-template/${12}`;
         // console.log("Setting preview URL:", previewUrlValue);
         setPreviewUrl(previewUrlValue);
       } else {
         // console.log("No templates available, using fallback template");
         // Use fallback template when no templates are available
-        const fallbackTemplateUrl = `${BASE_PATH}/id-template-new-frontend.jpeg`;
+        // const fallbackTemplateUrl = `${BASE_PATH}/id-template-new-frontend.jpeg`;
+        const previewUrlValue = `${BASE_PATH}/api/id-card-template/${12}`;
         // console.log("Setting fallback preview URL:", fallbackTemplateUrl);
-        setPreviewUrl(fallbackTemplateUrl);
+        setPreviewUrl(previewUrlValue);
       }
     } else {
       // Clear preview URL when no user details
@@ -267,6 +268,7 @@ export default function Page() {
               }
             } catch (error) {
               console.error("Failed to fetch existing image:", error);
+              setCapturedImage(null);
             }
           } else {
             setIdCardIssues([]);
@@ -943,6 +945,7 @@ export default function Page() {
             }
           } catch (error) {
             console.error("Failed to fetch existing image:", error);
+            setCapturedImage(null);
           }
         } else {
           setIdCardIssues([]);
@@ -984,7 +987,7 @@ export default function Page() {
 
   // Set default valid till date if not present
   useEffect(() => {
-    if (!validTillDate) {
+    if (!validTillDate && searchValue && searchValue.trim().length > 0) {
       setValidTillDate("31-07-2028");
     }
   }, [userDetails, validTillDate]);
@@ -1868,6 +1871,7 @@ export default function Page() {
                                       // console.log("Setting captured image from API:", imageUrl);
                                       setCapturedImage(imageUrl);
                                     } else {
+                                      setCapturedImage(null);
                                       // console.error("Image API returned error status:", imageRes.status);
                                       // const errorText = await imageRes.text();
                                       // console.error("Error response:", errorText);
@@ -1878,12 +1882,10 @@ export default function Page() {
                                           { cache: "no-store" } // Ensure fresh fetch
                                         );
                                         if (fallbackRes.ok) {
-                                          const fallbackBlob =
-                                            await fallbackRes.blob();
-                                          const fallbackUrl =
-                                            URL.createObjectURL(fallbackBlob);
+                                          // const fallbackBlob = await fallbackRes.blob();
+                                          // const fallbackUrl = URL.createObjectURL(fallbackBlob);
                                           // console.log("Setting fallback image:", fallbackUrl);
-                                          setCapturedImage(fallbackUrl);
+                                          // setCapturedImage(fallbackUrl);
                                         }
                                       } catch (fallbackError) {
                                         console.error(
