@@ -7,7 +7,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const filePath = path.join(process.env.SNAPCARD_IMAGE_BASE_PATH || './public', 'templates', `${id}.jpeg`);
   try {
     const file = await fs.readFile(filePath);
-    return new NextResponse(file, {
+    return new NextResponse(new Uint8Array(file), {
       status: 200,
       headers: {
         'Content-Type': 'image/jpeg',

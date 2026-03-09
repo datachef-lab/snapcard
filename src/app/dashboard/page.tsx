@@ -39,6 +39,7 @@ export default function Page() {
 
   const webcamRef = useRef<Webcam>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [loadingSaveBtn, setLoadingSaveBtn] = useState(false);
   const faceCanvasRef = useRef<HTMLCanvasElement>(null); // For face box overlay
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [idCardIssues, setIdCardIssues] = useState<IdCardIssue[]>([]);
@@ -1336,6 +1337,7 @@ export default function Page() {
                             onSubmit={async (e) => {
                               e.preventDefault();
                               if (!userDetails?.codeNumber) return;
+                              setLoadingSaveBtn(true);
                               try {
                                 const res = await fetch(
                                   `${BASE_PATH}/api/students/update-rfid`,
@@ -1380,6 +1382,8 @@ export default function Page() {
                                 }
                               } catch {
                                 toast.error("Error updating RFID.");
+                              } finally {
+                                setLoadingSaveBtn(false);
                               }
                             }}
                           >
@@ -1403,6 +1407,7 @@ export default function Page() {
                             <Button
                               type="submit"
                               className="h-9 px-4 bg-blue-600 text-white rounded-lg"
+                              disabled={loadingSaveBtn}
                             >
                               Save
                             </Button>

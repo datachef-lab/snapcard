@@ -3,9 +3,19 @@ import sharp from "sharp";
 import path from "path";
 import fs from "fs";
 import { getIdCardIssuesByUidAndDate } from "@/lib/services/id-card-issue.service";
+import { IdCardIssue } from "@/types";
 
 const SNAPCARD_IMAGE_BASE_PATH =
   process.env.SNAPCARD_IMAGE_BASE_PATH || "./public";
+
+  
+function findExistingImagePath(idCards: IdCardIssue[]): string | null {
+  for (const idCard of idCards) {
+    const imagePath = path.join(SNAPCARD_IMAGE_BASE_PATH, "idcards", `${idCard.id}.png`);
+    if (fs.existsSync(imagePath)) return imagePath;
+  }
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,14 +40,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Construct image path for student profile
-    const imagePath = path.join(
-      SNAPCARD_IMAGE_BASE_PATH,
-      "idcards",
-      `${foundIdCards[0].id}.png`
-    );
-    console.log(imagePath);
-    // Check if file exists
+    const imagePath = findExistingImagePath(foundIdCards);
+    if (!imagePath) {
+      return new NextResponse("Image not found", { status: 404 });
+    }
+
     if (!fs.existsSync(imagePath)) {
       return new NextResponse("Image not found", { status: 404 });
     }
@@ -90,7 +97,7 @@ export async function GET(request: NextRequest) {
       const croppedImageBuffer = await processedImage.toBuffer();
 
       // Return the cropped image
-      return new NextResponse(croppedImageBuffer, {
+      return new NextResponse(new Uint8Array(croppedImageBuffer), {
         status: 200,
         headers: {
           "Content-Type": `image/${outputFormat.toLowerCase()}`,
@@ -102,7 +109,7 @@ export async function GET(request: NextRequest) {
       // Return the original image without cropping
       const imageBuffer = await fs.promises.readFile(imagePath);
 
-      return new NextResponse(imageBuffer, {
+      return new NextResponse(new Uint8Array(imageBuffer), {
         status: 200,
         headers: {
           "Content-Type": "image/jpeg",

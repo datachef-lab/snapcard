@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   try {
     console.log("fired the fetch image api for:", idCardIssueId);
     const imageBuffer = await fs.readFile(imagePath);
-    return new NextResponse(imageBuffer, {
+    return new NextResponse(new Uint8Array(imageBuffer), {
       status: 200,
       headers: {
         "Content-Type": "image/png",
